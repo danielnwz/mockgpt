@@ -1,0 +1,433 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-size: 16px;
+
+  /* Light Mode - Salbeigrün-Palette
+     Basis: rgb(149, 186, 176) / #95bab0
+     Dunklere Variante für Buttons: #4d7c72 (Kontrast 4.6:1 mit Weiß)
+  */
+  --background: #f5f7f6;
+  --foreground: #1a2421;
+  --card: #ffffff;
+  --card-foreground: #1a2421;
+  --popover: #ffffff;
+  --popover-foreground: #1a2421;
+
+  /* Primary: Dunkleres Salbeigrün für besseren Kontrast */
+  --primary: #4d7c72;
+  --primary-foreground: #ffffff;
+
+  /* Secondary: Helles Salbeigrün für Badges/Tags */
+  --secondary: rgb(149, 186, 176);
+  --secondary-foreground: #1a2421;
+
+  /* Muted: Dezenter Hintergrund */
+  --muted: #e8efed;
+  --muted-foreground: #5a6b66;
+
+  /* Accent: Helles Salbeigrün für Hover */
+  --accent: #d4e4e0;
+  --accent-foreground: #1a2421;
+
+  /* Destructive: Warmes Rot */
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: #c5d4cf;
+  --input: #ffffff;
+  --input-background: #ffffff;
+  --switch-background: #4d7c72;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #4d7c72;
+
+  /* Charts - Salbeigrün-Abstufungen */
+  --chart-1: #4d7c72;
+  --chart-2: #6a9d8d;
+  --chart-3: rgb(149, 186, 176);
+  --chart-4: #b8d4cb;
+  --chart-5: #dc2626;
+
+  --radius: 0.625rem;
+
+  /* Sidebar */
+  --sidebar: #e8efed;
+  --sidebar-foreground: #1a2421;
+  --sidebar-primary: #4d7c72;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d4e4e0;
+  --sidebar-accent-foreground: #1a2421;
+  --sidebar-border: #c5d4cf;
+  --sidebar-ring: #4d7c72;
+}
+
+.dark {
+  /* Dark Mode - Dunkles Salbeigrün rgb(0, 54, 48) als Basis
+     Primary bleibt hell für guten Kontrast auf dunklem Hintergrund
+  */
+  --background: rgb(0, 54, 48);
+  --foreground: #e8f0ed;
+  --card: rgb(10, 64, 58);
+  --card-foreground: #e8f0ed;
+  --popover: rgb(10, 64, 58);
+  --popover-foreground: #e8f0ed;
+
+  /* Primary: Helles Salbeigrün - gut lesbar auf dunklem Hintergrund */
+  --primary: rgb(149, 186, 176);
+  --primary-foreground: #0a2a26;
+
+  /* Secondary: Mittleres Grün */
+  --secondary: rgb(35, 90, 82);
+  --secondary-foreground: #e8f0ed;
+
+  /* Muted: Dezentes dunkles Grün */
+  --muted: rgb(20, 74, 68);
+  --muted-foreground: #9cb5af;
+
+  /* Accent: Helleres Grün für Hover */
+  --accent: rgb(45, 100, 92);
+  --accent-foreground: #e8f0ed;
+
+  /* Destructive */
+  --destructive: #f87171;
+  --destructive-foreground: #1a0a0a;
+
+  --border: rgb(50, 105, 97);
+  --input: rgb(15, 69, 63);
+  --input-background: rgb(15, 69, 63);
+  --switch-background: rgb(149, 186, 176);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: rgb(149, 186, 176);
+
+  /* Charts */
+  --chart-1: rgb(149, 186, 176);
+  --chart-2: #7fc4b4;
+  --chart-3: #5aaa98;
+  --chart-4: #3d9080;
+  --chart-5: #f87171;
+
+  /* Sidebar */
+  --sidebar: rgb(0, 44, 38);
+  --sidebar-foreground: #e8f0ed;
+  --sidebar-primary: rgb(149, 186, 176);
+  --sidebar-primary-foreground: #0a2a26;
+  --sidebar-accent: rgb(35, 90, 82);
+  --sidebar-accent-foreground: #e8f0ed;
+  --sidebar-border: rgb(40, 85, 78);
+  --sidebar-ring: rgb(149, 186, 176);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(700px 460px at 20% 0%, rgba(149, 186, 176, 0.18), transparent 60%),
+      radial-gradient(620px 420px at 80% 10%, rgba(149, 186, 176, 0.12), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+    background-attachment: fixed;
+  }
+
+  /* Private Mode - Trust/Secure Blue Theme */
+  .private body,
+  .private {
+    /* Base Blue Palette - Light Mode */
+    --primary: #2563EB;
+    /* Royal Blue */
+    --primary-foreground: #ffffff;
+
+    --secondary: #dbeafe;
+    /* Light Blue */
+    --secondary-foreground: #1e3a8a;
+
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+
+    --accent: #eff6ff;
+    --accent-foreground: #1e40af;
+
+    --background: #f8fafc;
+    --foreground: #0f172a;
+
+    --sidebar: #f1f5f9;
+    --sidebar-foreground: #334155;
+    --sidebar-primary: #2563EB;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #dbeafe;
+    --sidebar-accent-foreground: #1e3a8a;
+    --sidebar-border: #e2e8f0;
+
+    --border: #e2e8f0;
+    --input: #ffffff;
+    --ring: #3b82f6;
+
+    /* Charts (Blue/Indigo spectrum) */
+    --chart-1: #2563EB;
+    --chart-2: #3B82F6;
+    --chart-3: #60A5FA;
+    --chart-4: #93C5FD;
+    --chart-5: #1D4ED8;
+  }
+
+  /* Update background gradient for private light mode */
+  .private body {
+    background-image:
+      radial-gradient(700px 460px at 20% 0%, rgba(37, 99, 235, 0.1), transparent 60%),
+      radial-gradient(620px 420px at 80% 10%, rgba(59, 130, 246, 0.08), transparent 60%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  }
+
+  .dark {
+    /* Dark Mode - Dunkles Salbeigrün as default... */
+    /* (Keeping original dark vars here, they are applied when .dark is present) */
+  }
+
+  body:has(.dark) {
+    background-color: rgb(0, 54, 48);
+    background-image:
+      radial-gradient(700px 460px at 20% 0%, rgba(149, 186, 176, 0.035), transparent 70%),
+      radial-gradient(620px 420px at 80% 10%, rgba(149, 186, 176, 0.025), transparent 70%),
+      linear-gradient(180deg, rgba(0, 54, 48, 0.15), rgba(0, 54, 48, 0));
+  }
+
+  /* Private + Dark Mode Overrides */
+  .private body:has(.dark),
+  .private.dark body,
+  .private .dark,
+  .private.dark {
+    --background: #0f172a;
+    /* Slate 900 */
+    --foreground: #f1f5f9;
+    /* Slate 100 */
+    --card: #1e293b;
+    /* Slate 800 */
+    --card-foreground: #f1f5f9;
+    --popover: #1e293b;
+    --popover-foreground: #f1f5f9;
+
+    --primary: #3b82f6;
+    /* Blue 500 - brighter for dark mode */
+    --primary-foreground: #ffffff;
+
+    --secondary: #1e3a8a;
+    /* Dark Blue */
+    --secondary-foreground: #e0e7ff;
+
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+
+    --accent: #1e40af;
+    --accent-foreground: #f1f5f9;
+
+    --destructive: #ef4444;
+    --destructive-foreground: #fef2f2;
+
+    --border: #334155;
+    --input: #1e293b;
+    --input-background: #1e293b;
+    --switch-background: #3b82f6;
+
+    --sidebar: #020617;
+    /* Slate 950 */
+    --sidebar-foreground: #cbd5e1;
+    --sidebar-primary: #3b82f6;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #1e3a8a;
+    --sidebar-accent-foreground: #f8fafc;
+    --sidebar-border: #1e293b;
+  }
+
+  /* Update background gradient for private dark mode */
+  .private body:has(.dark) {
+    background-color: #0f172a;
+    background-image:
+      radial-gradient(700px 460px at 20% 0%, rgba(59, 130, 246, 0.08), transparent 70%),
+      radial-gradient(620px 420px at 80% 10%, rgba(37, 99, 235, 0.05), transparent 70%),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0));
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-2xl border border-border bg-card shadow-sm;
+  }
+
+  .surface-card-hover {
+    @apply transition-all hover:border-primary hover:shadow-lg hover:-translate-y-1;
+  }
+
+  .surface-panel {
+    @apply bg-card border-b;
+  }
+
+  .surface-popover {
+    @apply bg-popover border border-border rounded-lg shadow-lg;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground hover:opacity-90;
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary text-secondary-foreground hover:opacity-90;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-foreground hover:bg-accent;
+  }
+
+  .btn-danger {
+    @apply btn bg-destructive text-destructive-foreground hover:opacity-90;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  .btn-icon {
+    @apply p-2;
+  }
+
+  .type-display {
+    @apply text-4xl md:text-5xl font-bold tracking-tight;
+  }
+
+  .type-title {
+    @apply text-2xl font-semibold;
+  }
+
+  .type-section {
+    @apply text-xl font-semibold;
+  }
+
+  .type-label {
+    @apply text-xs font-semibold uppercase tracking-wider;
+  }
+
+  .type-muted {
+    @apply text-sm text-muted-foreground;
+  }
+}
+
+@layer components {
+  .context-halo {
+    @apply pointer-events-none absolute left-0 top-0 h-32 w-[420px] rounded-full blur-3xl opacity-70;
+    background: radial-gradient(closest-side, rgba(149, 186, 176, 0.45), transparent 70%);
+  }
+
+  .dark .context-halo {
+    background: radial-gradient(closest-side, rgba(149, 186, 176, 0.28), transparent 70%);
+  }
+}
+
+@layer utilities {
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-up {
+    animation: fade-up 420ms ease-out both;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full transition-colors;
+    background-color: color-mix(in srgb, var(--border), transparent 50%);
+  }
+
+  .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-border;
+  }
+
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+}
+
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where( :not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+html {
+  font-size: var(--font-size);
+}

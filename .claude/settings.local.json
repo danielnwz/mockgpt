@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(timeout /t 5)",
+      "Bash(findstr:*)",
+      "Bash(more:*)"
+    ]
+  }
+}
