@@ -349,34 +349,38 @@ export default function App() {
                 />
               )}
 
-              {currentView === 'discovery' && (
-                <AssistantDiscovery
-                  assistants={allAssistants}
-                  userAssistants={userAssistants}
-                  onSelectAssistant={(assistant) => handleStartChat('', assistant)}
-                  onEditAssistant={handleEditAssistant}
-                  onDeleteAssistant={handleDeleteAssistant}
-                  onCreateNew={() => {
-                    setEditingAssistant(null);
-                    setCurrentView('editor');
-                  }}
-                  onToggleFavorite={handleToggleFavorite}
-                  favorites={favorites}
-                />
-              )}
+              {(currentView === 'discovery' || currentView === 'editor') && (
+                <div className="relative h-full w-full">
+                  <AssistantDiscovery
+                    assistants={allAssistants}
+                    userAssistants={userAssistants}
+                    onSelectAssistant={(assistant) => handleStartChat('', assistant)}
+                    onEditAssistant={handleEditAssistant}
+                    onDeleteAssistant={handleDeleteAssistant}
+                    onCreateNew={() => {
+                      setEditingAssistant(null);
+                      setCurrentView('editor');
+                    }}
+                    onToggleFavorite={handleToggleFavorite}
+                    favorites={favorites}
+                  />
 
-              {currentView === 'editor' && (
-                <AssistantEditor
-                  assistant={editingAssistant}
-                  onSave={(assistant) => {
-                    if (editingAssistant) {
-                      handleUpdateAssistant(assistant as Assistant);
-                    } else {
-                      handleCreateAssistant(assistant);
-                    }
-                  }}
-                  onCancel={() => setCurrentView('discovery')}
-                />
+                  {currentView === 'editor' && (
+                    <div className="absolute inset-0 z-50">
+                      <AssistantEditor
+                        assistant={editingAssistant}
+                        onSave={(assistant) => {
+                          if (editingAssistant) {
+                            handleUpdateAssistant(assistant as Assistant);
+                          } else {
+                            handleCreateAssistant(assistant);
+                          }
+                        }}
+                        onCancel={() => setCurrentView('discovery')}
+                      />
+                    </div>
+                  )}
+                </div>
               )}
 
               {currentView === 'version' && (

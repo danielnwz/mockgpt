@@ -76,6 +76,9 @@ const translations = {
     send: 'Send',
 
     // Assistant Discovery
+    standardMode: 'Standard Mode',
+    typeStandardMessage: 'Standard Mode • No sensitive data...',
+    typeSecureMessage: 'Secure Mode • Safe for sensitive data...',
     discoverAssistants: 'Discover Assistants',
     browseAndUse: 'Browse and use AI assistants for your workflows',
     import: 'Import',
@@ -270,6 +273,9 @@ const translations = {
     send: 'Senden',
 
     // Assistant Discovery
+    standardMode: 'Standard Modus',
+    typeStandardMessage: 'Standard Modus • Keine sensiblen Daten...',
+    typeSecureMessage: 'Sicherer Modus • Sicher für vertrauliche Daten...',
     discoverAssistants: 'Assistenten entdecken',
     browseAndUse: 'Durchsuche und verwende KI-Assistenten für deine Arbeitsabläufe',
     import: 'Importieren',

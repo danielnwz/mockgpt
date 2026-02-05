@@ -45,7 +45,7 @@ export function AssistantDiscovery({
   onToggleFavorite,
   favorites,
 }: AssistantDiscoveryProps) {
-  const [filter, setFilter] = useState<'all' | 'recommended' | 'yours' | 'favorites'>('all');
+  const [filter, setFilter] = useState<'all' | 'recommended' | 'yours' | 'favorites'>('favorites');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
   const [sortBy, setSortBy] = useState<'subscriptions' | 'title' | 'updated'>('subscriptions');

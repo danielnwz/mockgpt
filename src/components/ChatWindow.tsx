@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Settings, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Send, Settings, ChevronDown, ShieldCheck, Globe } from 'lucide-react';
 import { Chat, Assistant, ResponseBehavior } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -404,13 +404,39 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
       {/* Input */}
       <div className="p-6">
         <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={t('typeYourMessage')}
-            className="flex-1 px-4 py-3 rounded-xl border border focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground shadow-sm"
-          />
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={privateMode
+                ? (t('typeSecureMessage') || "Type a secure message...")
+                : (t('typeStandardMessage') || "Type a message...")
+              }
+              className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground shadow-sm transition-all ${privateMode
+                ? 'border-primary/50 focus:ring-primary pr-36 pl-10'
+                : 'border-border pr-36 pl-10'
+                }`}
+            />
+
+            {privateMode ? (
+              <>
+                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-pulse" />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 select-none">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span className="text-xs font-semibold whitespace-nowrap">Secure Mode</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-secondary text-muted-foreground px-3 py-1.5 rounded-lg border border-border select-none">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span className="text-xs font-semibold whitespace-nowrap">{t('standardMode') || 'Standard Mode'}</span>
+                </div>
+              </>
+            )}
+          </div>
           <button
             type="submit"
             disabled={!input.trim()}
