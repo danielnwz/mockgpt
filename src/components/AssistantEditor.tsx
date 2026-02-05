@@ -50,7 +50,6 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     assistant?.allowedTools || []
   );
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>(
     assistant?.publishedDepartments || []
   );
@@ -94,28 +93,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     );
   };
 
-  const handleGenerateSystemPrompt = () => {
-    if (!description.trim()) {
-      alert('Please add a description first. The AI will use it to generate an appropriate system prompt.');
-      return;
-    }
 
-    setIsGeneratingPrompt(true);
-
-    // Simulate AI generation for system prompt
-    setTimeout(() => {
-      const generatedPrompt = `You are ${name || 'an AI assistant'} specialized in ${description}. 
-\nYour primary responsibilities include:
-- Providing accurate and helpful information related to ${description}
-- Adapting your communication style to the user's needs
-- Asking clarifying questions when necessary
-- Being transparent about your limitations
-\nApproach each interaction with expertise while remaining approachable and easy to understand.`;
-
-      setSystemPrompt(generatedPrompt);
-      setIsGeneratingPrompt(false);
-    }, 1500);
-  };
 
   const handleGenerateConfigFromDescription = () => {
     if (!aiDescription.trim()) return;
