@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Settings, ChevronDown, ShieldCheck, Globe, AlertTriangle } from 'lucide-react';
+import { Send, Settings, ChevronDown, ShieldCheck, Globe, AlertTriangle, Info, MapPin } from 'lucide-react';
 import { Chat, Assistant, ResponseBehavior } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -20,12 +20,48 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
 
   const getLLMModels = () => {
     const allModels = [
-      { id: 'gpt-4', name: 'GPT-4 (Standard)', description: 'Most capable model for complex tasks and reasoning.', publicOnly: true },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Fast and cost-effective model for everyday tasks.', publicOnly: true },
-      { id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Strong performance on creative and open-ended tasks.', publicOnly: true },
-      { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', description: 'Balanced performance for enterprise workloads.', publicOnly: true },
-      { id: 'llama-3-70b', name: 'MUC-GPT Secure', description: 'Hosted by IT-Referat. Certified for internal data (VS-NfD).', privateAllowed: true },
-      { id: 'mistral-large', name: 'MUC-Mistral Large', description: 'High-performance model for German language tasks. Hosted on municipal servers.', privateAllowed: true },
+      {
+        id: 'gpt-4', name: 'GPT-4 (Standard)', description: 'Most capable model for complex tasks and reasoning.',
+        publicOnly: true,
+        costInput: 0.03, costOutput: 0.06,
+        knowledgeCutoff: 'Apr 2024', provider: 'OpenAI', location: 'USA (Azure EU)',
+        maxInput: 128000,
+      },
+      {
+        id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Fast and cost-effective model for everyday tasks.',
+        publicOnly: true,
+        costInput: 0.0005, costOutput: 0.0015,
+        knowledgeCutoff: 'Sep 2021', provider: 'OpenAI', location: 'USA (Azure EU)',
+        maxInput: 16385,
+      },
+      {
+        id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Strong performance on creative and open-ended tasks.',
+        publicOnly: true,
+        costInput: 0.015, costOutput: 0.075,
+        knowledgeCutoff: 'Aug 2024', provider: 'Anthropic', location: 'USA (AWS EU)',
+        maxInput: 200000,
+      },
+      {
+        id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', description: 'Balanced performance for enterprise workloads.',
+        publicOnly: true,
+        costInput: 0.003, costOutput: 0.015,
+        knowledgeCutoff: 'Aug 2024', provider: 'Anthropic', location: 'USA (AWS EU)',
+        maxInput: 200000,
+      },
+      {
+        id: 'llama-3-70b', name: 'MUC-GPT Secure', description: 'Hosted by IT-Referat. Certified for internal data (VS-NfD).',
+        privateAllowed: true,
+        costInput: 0, costOutput: 0,
+        knowledgeCutoff: 'Dec 2023', provider: 'LHM / IT-Referat', location: '🇩🇪 München (On-Premise)',
+        maxInput: 8192,
+      },
+      {
+        id: 'mistral-large', name: 'MUC-Mistral Large', description: 'High-performance model for German language tasks. Hosted on municipal servers.',
+        privateAllowed: true,
+        costInput: 0, costOutput: 0,
+        knowledgeCutoff: 'Nov 2023', provider: 'LHM / IT-Referat', location: '🇩🇪 München (On-Premise)',
+        maxInput: 32000,
+      },
     ];
 
     if (privateMode) {
@@ -41,6 +77,7 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
   ];
   const [input, setInput] = useState('');
   const [showLLMMenu, setShowLLMMenu] = useState(false);
+  const [showModelDetails, setShowModelDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedLLM, setSelectedLLM] = useState(chat.llmModel || 'gpt-4');
   const [chatResponseBehavior, setChatResponseBehavior] = useState<ResponseBehavior>(
@@ -123,34 +160,72 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
               </button>
               {showLLMMenu && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowLLMMenu(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-card border border rounded-lg shadow-lg z-20 py-2">
-                    <div className="px-3 py-2 border-b border-border">
-                      <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
-                    </div>
-                    {getLLMModels().map((model) => (
+                  <div className="fixed inset-0 z-10" onClick={() => { setShowLLMMenu(false); setShowModelDetails(false); }} />
+                  <div className={`absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-20 transition-all duration-200 ${showModelDetails ? 'w-[480px]' : 'w-80'}`}>
+                    <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
+                      </div>
                       <button
-                        key={model.id}
-                        onClick={() => handleLLMChange(model.id)}
-                        className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${selectedLLM === model.id ? 'bg-accent/50' : ''
-                          }`}
+                        onClick={(e) => { e.stopPropagation(); setShowModelDetails(!showModelDetails); }}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${showModelDetails ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-foreground">{model.name}</span>
-                              {selectedLLM === model.id && (
-                                <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{model.description}</p>
-                          </div>
-                        </div>
+                        <Info className="w-3 h-3" />
+                        {showModelDetails ? 'Simple' : 'Details'}
                       </button>
-                    ))}
+                    </div>
+                    <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
+                      {getLLMModels().map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => handleLLMChange(model.id)}
+                          className={`w-full px-4 py-3 text-left hover:bg-accent/60 transition-colors border-b border-border/30 last:border-0 ${selectedLLM === model.id ? 'bg-accent/40' : ''}`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-0.5">
+                            <span className="text-sm font-semibold text-foreground">{model.name}</span>
+                            {selectedLLM === model.id && (
+                              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{model.description}</p>
+                          {showModelDetails && (
+                            <div className="mt-2.5 rounded-lg bg-muted/20 border border-border/30 overflow-hidden">
+                              <div className="grid grid-cols-2 gap-px bg-border/20">
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Input cost</span>
+                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costInput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                    {model.costInput === 0 ? '✓ Free' : `$${model.costInput}/1K`}
+                                  </span>
+                                </div>
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Output cost</span>
+                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costOutput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                    {model.costOutput === 0 ? '✓ Free' : `$${model.costOutput}/1K`}
+                                  </span>
+                                </div>
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Knowledge</span>
+                                  <span className="text-[11px] font-semibold text-foreground">{model.knowledgeCutoff}</span>
+                                </div>
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Max input</span>
+                                  <span className="text-[11px] font-mono font-semibold text-foreground">{(model.maxInput).toLocaleString()} tok</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 px-3 py-2 bg-card/60 border-t border-border/20">
+                                <MapPin className="w-3 h-3 text-primary/50 flex-shrink-0" />
+                                <span className="text-[10px] text-muted-foreground">{model.provider}</span>
+                                <span className="text-muted-foreground/30">·</span>
+                                <span className="text-[10px] font-medium text-foreground">{model.location}</span>
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </>
               )}
@@ -188,34 +263,72 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
               </button>
               {showLLMMenu && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowLLMMenu(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-card border border rounded-lg shadow-lg z-20 py-2">
-                    <div className="px-3 py-2 border-b border-border">
-                      <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
-                    </div>
-                    {getLLMModels().map((model) => (
+                  <div className="fixed inset-0 z-10" onClick={() => { setShowLLMMenu(false); setShowModelDetails(false); }} />
+                  <div className={`absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-20 transition-all duration-200 ${showModelDetails ? 'w-[480px]' : 'w-80'}`}>
+                    <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
+                      </div>
                       <button
-                        key={model.id}
-                        onClick={() => handleLLMChange(model.id)}
-                        className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors ${selectedLLM === model.id ? 'bg-accent/50' : ''
-                          }`}
+                        onClick={(e) => { e.stopPropagation(); setShowModelDetails(!showModelDetails); }}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${showModelDetails ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-foreground">{model.name}</span>
-                              {selectedLLM === model.id && (
-                                <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{model.description}</p>
-                          </div>
-                        </div>
+                        <Info className="w-3 h-3" />
+                        {showModelDetails ? 'Simple' : 'Details'}
                       </button>
-                    ))}
+                    </div>
+                    <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
+                      {getLLMModels().map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => handleLLMChange(model.id)}
+                          className={`w-full px-4 py-3 text-left hover:bg-accent/60 transition-colors border-b border-border/30 last:border-0 ${selectedLLM === model.id ? 'bg-accent/40' : ''}`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-0.5">
+                            <span className="text-sm font-semibold text-foreground">{model.name}</span>
+                            {selectedLLM === model.id && (
+                              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{model.description}</p>
+                          {showModelDetails && (
+                            <div className="mt-2.5 rounded-lg bg-muted/20 border border-border/30 overflow-hidden">
+                              <div className="grid grid-cols-2 gap-px bg-border/20">
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Input cost</span>
+                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costInput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                    {model.costInput === 0 ? '✓ Free' : `$${model.costInput}/1K`}
+                                  </span>
+                                </div>
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Output cost</span>
+                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costOutput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                    {model.costOutput === 0 ? '✓ Free' : `$${model.costOutput}/1K`}
+                                  </span>
+                                </div>
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Knowledge</span>
+                                  <span className="text-[11px] font-semibold text-foreground">{model.knowledgeCutoff}</span>
+                                </div>
+                                <div className="bg-card/80 px-3 py-2">
+                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Max input</span>
+                                  <span className="text-[11px] font-mono font-semibold text-foreground">{(model.maxInput).toLocaleString()} tok</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 px-3 py-2 bg-card/60 border-t border-border/20">
+                                <MapPin className="w-3 h-3 text-primary/50 flex-shrink-0" />
+                                <span className="text-[10px] text-muted-foreground">{model.provider}</span>
+                                <span className="text-muted-foreground/30">·</span>
+                                <span className="text-[10px] font-medium text-foreground">{model.location}</span>
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </>
               )}

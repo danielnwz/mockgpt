@@ -36,6 +36,18 @@
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
 
+  /* Warning: Amber */
+  --warning: #D97706;
+  --warning-foreground: #ffffff;
+
+  /* Success: Emerald */
+  --success: #059669;
+  --success-foreground: #ffffff;
+
+  /* Info: Blue */
+  --info: #2563EB;
+  --info-foreground: #ffffff;
+
   --border: #c5d4cf;
   --input: #ffffff;
   --input-background: #ffffff;
@@ -65,60 +77,72 @@
 }
 
 .dark {
-  /* Dark Mode - Dunkles Salbeigrün rgb(0, 54, 48) als Basis
-     Primary bleibt hell für guten Kontrast auf dunklem Hintergrund
+  /* Dark Mode - Refined charcoal-teal with wider tonal spread
+     Primary: brighter sage for good contrast on dark background
   */
-  --background: rgb(0, 54, 48);
-  --foreground: #e8f0ed;
-  --card: rgb(10, 64, 58);
-  --card-foreground: #e8f0ed;
-  --popover: rgb(10, 64, 58);
-  --popover-foreground: #e8f0ed;
+  --background: #0F2B27;
+  --foreground: #E2F0EC;
+  --card: #1A3631;
+  --card-foreground: #E2F0EC;
+  --popover: #1A3631;
+  --popover-foreground: #E2F0EC;
 
-  /* Primary: Helles Salbeigrün - gut lesbar auf dunklem Hintergrund */
-  --primary: rgb(149, 186, 176);
-  --primary-foreground: #0a2a26;
+  /* Primary: Brighter sage for dark mode visibility */
+  --primary: #7ECBB8;
+  --primary-foreground: #002B25;
 
-  /* Secondary: Mittleres Grün */
-  --secondary: rgb(35, 90, 82);
-  --secondary-foreground: #e8f0ed;
+  /* Secondary: Medium teal */
+  --secondary: #2D635A;
+  --secondary-foreground: #E2F0EC;
 
-  /* Muted: Dezentes dunkles Grün */
-  --muted: rgb(20, 74, 68);
-  --muted-foreground: #9cb5af;
+  /* Muted: Subtle dark teal */
+  --muted: #1C403A;
+  --muted-foreground: #A8C4BC;
 
-  /* Accent: Helleres Grün für Hover */
-  --accent: rgb(45, 100, 92);
-  --accent-foreground: #e8f0ed;
+  /* Accent: Hover-state teal */
+  --accent: #1F524A;
+  --accent-foreground: #E2F0EC;
 
   /* Destructive */
   --destructive: #f87171;
   --destructive-foreground: #1a0a0a;
 
-  --border: rgb(50, 105, 97);
-  --input: rgb(15, 69, 63);
-  --input-background: rgb(15, 69, 63);
-  --switch-background: rgb(149, 186, 176);
+  /* Warning: Bright amber */
+  --warning: #F59E0B;
+  --warning-foreground: #422B08;
+
+  /* Success: Mint green */
+  --success: #34D399;
+  --success-foreground: #064E3B;
+
+  /* Info: Sky blue */
+  --info: #60A5FA;
+  --info-foreground: #1E3A5F;
+
+  --border: #35796F;
+  --input: #183532;
+  --input-background: #183532;
+  --switch-background: #7ECBB8;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: rgb(149, 186, 176);
+  --ring: #7ECBB8;
 
   /* Charts */
-  --chart-1: rgb(149, 186, 176);
-  --chart-2: #7fc4b4;
-  --chart-3: #5aaa98;
-  --chart-4: #3d9080;
+  --chart-1: #7ECBB8;
+  --chart-2: #5CBDA8;
+  --chart-3: #3BA57A;
+  --chart-4: #2D8B6E;
   --chart-5: #f87171;
 
   /* Sidebar */
-  --sidebar: rgb(0, 44, 38);
-  --sidebar-foreground: #e8f0ed;
-  --sidebar-primary: rgb(149, 186, 176);
-  --sidebar-primary-foreground: #0a2a26;
-  --sidebar-accent: rgb(35, 90, 82);
-  --sidebar-accent-foreground: #e8f0ed;
-  --sidebar-border: rgb(40, 85, 78);
-  --sidebar-ring: rgb(149, 186, 176);
+  --sidebar: #0A2420;
+  --sidebar-foreground: #E2F0EC;
+  --sidebar-primary: #7ECBB8;
+  --sidebar-primary-foreground: #002B25;
+  --sidebar-accent: #2D635A;
+  --sidebar-accent-foreground: #E2F0EC;
+  --sidebar-border: #2A524A;
+  --sidebar-ring: #7ECBB8;
 }
 
 @layer base {
@@ -131,11 +155,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: var(--background);
-    background-image:
-      radial-gradient(700px 460px at 20% 0%, rgba(149, 186, 176, 0.18), transparent 60%),
-      radial-gradient(620px 420px at 80% 10%, rgba(149, 186, 176, 0.12), transparent 60%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
-    background-attachment: fixed;
   }
 
   /* Private Mode - Trust/Secure Blue Theme */
@@ -179,13 +198,7 @@
     --chart-5: #1D4ED8;
   }
 
-  /* Update background gradient for private light mode */
-  .private body {
-    background-image:
-      radial-gradient(700px 460px at 20% 0%, rgba(37, 99, 235, 0.1), transparent 60%),
-      radial-gradient(620px 420px at 80% 10%, rgba(59, 130, 246, 0.08), transparent 60%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
-  }
+
 
   .dark {
     /* Dark Mode - Dunkles Salbeigrün as default... */
@@ -193,11 +206,7 @@
   }
 
   body:has(.dark) {
-    background-color: rgb(0, 54, 48);
-    background-image:
-      radial-gradient(700px 460px at 20% 0%, rgba(149, 186, 176, 0.035), transparent 70%),
-      radial-gradient(620px 420px at 80% 10%, rgba(149, 186, 176, 0.025), transparent 70%),
-      linear-gradient(180deg, rgba(0, 54, 48, 0.15), rgba(0, 54, 48, 0));
+    background-color: #0F2B27;
   }
 
   /* Private + Dark Mode Overrides */
@@ -247,13 +256,8 @@
     --sidebar-border: #1e293b;
   }
 
-  /* Update background gradient for private dark mode */
   .private body:has(.dark) {
     background-color: #0f172a;
-    background-image:
-      radial-gradient(700px 460px at 20% 0%, rgba(59, 130, 246, 0.08), transparent 70%),
-      radial-gradient(620px 420px at 80% 10%, rgba(37, 99, 235, 0.05), transparent 70%),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.2), rgba(15, 23, 42, 0));
   }
 }
 
@@ -334,7 +338,7 @@
   }
 
   .dark .context-halo {
-    background: radial-gradient(closest-side, rgba(149, 186, 176, 0.28), transparent 70%);
+    background: radial-gradient(closest-side, rgba(126, 203, 184, 0.28), transparent 70%);
   }
 }
 
