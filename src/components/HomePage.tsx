@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Compass } from 'lucide-react';
+import { Send, Compass, Sparkles } from 'lucide-react';
 import { Assistant } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -96,7 +96,10 @@ export function HomePage({
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="type-section text-foreground">{t('recommendedForYou')}</h2>
+            <h2 className="type-section text-foreground flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-foreground" />
+              {t('lastUsed')}
+            </h2>
           </div>
 
           <div className="space-y-4">

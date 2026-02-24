@@ -1,4 +1,4 @@
-import { Home, MessageSquarePlus, ChevronLeft, ChevronRight, Trash2, History, Sparkles, Pencil, Lock, ShieldCheck } from 'lucide-react';
+import { Home, MessageSquarePlus, ChevronLeft, ChevronRight, Trash2, History, Sparkles, Pencil, Lock, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { Chat, Assistant } from '../types';
 import { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -196,28 +196,27 @@ export function Sidebar({
       </nav>
 
       {/* Private Mode Toggle */}
-      <div className="p-3 border-t border-sidebar-border relative">
+      <div className="p-3 border-t border-sidebar-border relative group/mode">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onTogglePrivateMode();
           }}
-          className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-300 group ${privateMode
+          className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-300 ${privateMode
             ? 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
             : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
             }`}
-          title={privateMode ? "Switch to Standard Mode" : "Switch to Secure Workspace"}
         >
           {privateMode ? (
             <ShieldCheck className="w-5 h-5 flex-shrink-0 text-primary animate-pulse" />
           ) : (
-            <Lock className="w-5 h-5 flex-shrink-0 text-muted-foreground group-hover:text-foreground" />
+            <Lock className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
           )}
 
           {!collapsed && (
             <div className="flex-1 text-left">
               <span className={`text-sm font-medium block ${privateMode ? 'text-primary' : 'text-foreground'}`}>
-                {privateMode ? 'Secure Workspace' : 'Standard Mode'}
+                {privateMode ? 'Secure Workspace' : 'Open Mode'}
               </span>
               <span className="text-[10px] text-muted-foreground block leading-tight">
                 {privateMode ? 'For sensitive data' : 'For general tasks'}
@@ -231,6 +230,36 @@ export function Sidebar({
             </div>
           )}
         </button>
+
+        {/* Hover tooltip */}
+        {!collapsed && (
+          <div className="absolute left-3 right-3 bottom-full mb-2 bg-card border border-border rounded-xl shadow-xl p-4 opacity-0 invisible group-hover/mode:opacity-100 group-hover/mode:visible transition-all duration-200 z-50 pointer-events-none">
+            {privateMode ? (
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Secure & Private Mode</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Your data is processed on certified municipal servers. Safe for internal documents, personal data, and confidential information.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Open Mode — No Data Protection</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Requests are processed by external AI providers. Do <strong className="text-foreground">not</strong> enter personal data, passwords, or confidential information.
+                  </p>
+                  <p className="text-xs text-primary mt-2 font-medium">
+                    Click to switch to Secure Mode →
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Collapse Toggle Button at Bottom */}

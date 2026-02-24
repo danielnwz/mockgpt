@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Settings, ChevronDown, ShieldCheck, Globe } from 'lucide-react';
+import { Send, Settings, ChevronDown, ShieldCheck, Globe, AlertTriangle } from 'lucide-react';
 import { Chat, Assistant, ResponseBehavior } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 
@@ -430,9 +430,9 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
             ) : (
               <>
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-secondary text-muted-foreground px-3 py-1.5 rounded-lg border border-border select-none">
-                  <Globe className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold whitespace-nowrap">{t('standardMode') || 'Standard Mode'}</span>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 select-none">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span className="text-xs font-semibold whitespace-nowrap">No sensitive data</span>
                 </div>
               </>
             )}

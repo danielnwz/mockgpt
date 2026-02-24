@@ -1,4 +1,4 @@
-import { Moon, Sun, HelpCircle, MessageSquare, Globe, Leaf, BookOpen, ShieldCheck } from 'lucide-react';
+import { Moon, Sun, HelpCircle, MessageSquare, Globe, Leaf, BookOpen, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage, useTranslation } from '../contexts/LanguageContext';
 
@@ -41,10 +41,44 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
           </div>
           <h1 className={`type-section ${privateMode ? 'text-primary-foreground' : 'text-foreground'}`}>MUCGPT</h1>
 
-          {privateMode && (
-            <div className="flex items-center gap-1.5 ml-4 bg-white/20 px-3 py-1 rounded-full border border-white/20">
-              <ShieldCheck className="w-3.5 h-3.5 text-white" />
-              <span className="text-xs font-semibold text-white tracking-wide uppercase">Secure & Private</span>
+          {privateMode ? (
+            <div className="relative group/pill">
+              <div className="flex items-center gap-1.5 ml-4 bg-white/20 px-3 py-1 rounded-full border border-white/20 cursor-help">
+                <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                <span className="text-xs font-semibold text-white tracking-wide uppercase">Secure & Private</span>
+              </div>
+              <div className="absolute left-0 top-full mt-2 w-72 bg-card border border-border rounded-xl shadow-xl p-4 opacity-0 invisible group-hover/pill:opacity-100 group-hover/pill:visible transition-all duration-200 z-50">
+                <div className="flex items-start gap-3 mb-2">
+                  <ShieldCheck className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Secure & Private Mode</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Your data is processed on certified municipal servers. Safe for internal documents, personal data, and confidential information.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="relative group/pill">
+              <div className="flex items-center gap-1.5 ml-4 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30 cursor-help">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 tracking-wide uppercase">No sensitive data</span>
+              </div>
+              <div className="absolute left-0 top-full mt-2 w-72 bg-card border border-amber-500/30 rounded-xl shadow-xl p-4 opacity-0 invisible group-hover/pill:opacity-100 group-hover/pill:visible transition-all duration-200 z-50">
+                <div className="flex items-start gap-3 mb-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Open Mode — No Data Protection</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Requests are processed by external AI providers. Do <strong className="text-foreground">not</strong> enter personal data, passwords, internal documents, or any confidential information.
+                    </p>
+                    <p className="text-xs text-primary mt-2 font-medium">
+                      Switch to Secure Mode for sensitive data →
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

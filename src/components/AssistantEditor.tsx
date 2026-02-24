@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Sparkles, Download, Plus, Trash2, Code2, Search, Globe, ImagePlus, FileUp, BarChart3, Target, Zap, Palette, User, Settings, Wrench, ChevronDown, Users, Info, ArrowLeft, Bot, PenTool } from 'lucide-react';
+import { X, Save, Sparkles, Download, Plus, Trash2, Code2, Search, Globe, ImagePlus, FileUp, BarChart3, Target, Zap, Palette, User, Settings, Wrench, ChevronDown, Users, Info, ArrowLeft, Bot, PenTool, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Assistant, ResponseBehavior } from '../types';
 import { ChatPreview } from './ChatPreview';
 import { DepartmentTree } from './DepartmentTree';
@@ -37,6 +37,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
   const [isGeneratingConfig, setIsGeneratingConfig] = useState(false);
 
   // Form State
+  const [isPreviewCollapsed, setIsPreviewCollapsed] = useState(false);
   const [name, setName] = useState(assistant?.name || '');
   const [description, setDescription] = useState(assistant?.description || '');
   const [icon, setIcon] = useState(assistant?.icon || '🤖');
@@ -238,9 +239,9 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
   // RENDER
   // ----------------------------------------------------------------------
   return (
-    <div className="h-full flex">
+    <div className="h-full flex overflow-hidden bg-card">
       {/* Settings Panel (Left Side) - Slide In */}
-      <div className="w-1/2 border-r overflow-y-auto bg-card thin-scrollbar animate-in slide-in-from-left-20 duration-500 ease-out">
+      <div className={`${creationStep === 'form' && isPreviewCollapsed ? 'w-full' : 'w-1/2'} border-r overflow-y-auto bg-card thin-scrollbar animate-in slide-in-from-left-20 duration-500 ease-out transition-[width] duration-500 flex flex-col`}>
 
         {/* Step: Initial Choice */}
         {creationStep === 'initial' && (
@@ -389,15 +390,25 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                   {assistant ? 'Edit Assistant' : 'Create New Assistant'}
                 </h2>
               </div>
-              <button
-                onClick={onCancel}
-                className="p-2 hover:bg-accent rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-muted-foreground" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsPreviewCollapsed(!isPreviewCollapsed)}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                  title={isPreviewCollapsed ? "Show preview" : "Hide preview"}
+                >
+                  {isPreviewCollapsed ? <PanelRightOpen className="w-5 h-5" /> : <PanelRightClose className="w-5 h-5" />}
+                </button>
+                <div className="w-px h-6 bg-border mx-1" />
+                <button
+                  onClick={onCancel}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-muted-foreground" />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-6">
+            <div className={`${isPreviewCollapsed ? 'grid grid-cols-2 gap-6' : 'space-y-6'}`}>
               {/* Basic Information Section */}
               <div className="relative surface-card">
                 <button
@@ -508,12 +519,6 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                         System Prompt <span className="text-destructive">*</span>
                       </label>
                     </div>
-                    {!description.trim() && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        Add a description to use AI-generated system prompts
-                      </p>
-                    )}
                     <textarea
                       value={systemPrompt}
                       onChange={(e) => setSystemPrompt(e.target.value)}
@@ -756,7 +761,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
               </div>
 
               {/* Action Buttons */}
-              <div className="surface-card">
+              <div className={`surface-card ${isPreviewCollapsed ? 'col-span-2' : ''}`}>
                 <button
                   type="button"
                   onClick={() => toggleSection('actions')}
@@ -812,15 +817,22 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       </div>
 
       {/* Preview Panel or Transparent Blur - Fade In */}
-      <div className={`animate-in fade-in duration-700 ease-out transition-all duration-500 ${creationStep === 'initial' ? 'w-1/2 bg-background/30 backdrop-blur-md' : 'w-1/2 bg-background border-l'}`}>
+      <div
+        className={`animate-in fade-in duration-700 ease-out transition-[width,opacity] duration-500 flex flex-col ${creationStep === 'initial'
+          ? 'w-1/2 bg-background/30 backdrop-blur-md'
+          : isPreviewCollapsed
+            ? 'w-0 opacity-0 overflow-hidden border-none pointer-events-none'
+            : 'w-1/2 bg-background border-l opacity-100'
+          }`}
+      >
         {creationStep === 'initial' ? (
           <div className="h-full w-full flex items-center justify-center">
             {/* The background is now handled by the overlay + backdrop-blur, showing the actual app behind it.
                  We can add a subtle hint text or just leave it clean. */}
           </div>
         ) : (
-          <div className="h-full flex flex-col animate-in fade-in duration-500">
-            <div className="px-8 py-6 bg-card border-b">
+          <div className="h-full flex flex-col animate-in fade-in duration-500 min-w-[300px]">
+            <div className="px-8 py-6 bg-card border-b flex-shrink-0">
               <h3 className="text-2xl font-bold text-foreground">Live Preview</h3>
               <p className="text-sm text-muted-foreground mt-2">
                 Test your assistant configuration in real-time

@@ -13,6 +13,7 @@ export const getRecommendedAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-01T10:00:00Z',
     subscriptionCount: 1250,
+    version: '2.1.0',
   },
   {
     id: 'rit-1',
@@ -26,6 +27,7 @@ export const getRecommendedAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-09-28T14:30:00Z',
     subscriptionCount: 890,
+    version: '1.3.2',
   },
   {
     id: 'rbs-1',
@@ -39,6 +41,7 @@ export const getRecommendedAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-15T08:45:00Z',
     subscriptionCount: 3400,
+    version: '3.0.1',
   },
   {
     id: 'plan-1',
@@ -52,6 +55,7 @@ export const getRecommendedAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-08-20T11:20:00Z',
     subscriptionCount: 156,
+    version: '1.0.0',
   },
   {
     id: 'mobil-1',
@@ -65,6 +69,7 @@ export const getRecommendedAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-25T16:50:00Z',
     subscriptionCount: 220,
+    version: '1.2.0',
   },
   {
     id: 'kultur-1',
@@ -78,6 +83,7 @@ export const getRecommendedAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-09-10T13:10:00Z',
     subscriptionCount: 85,
+    version: '0.9.1',
   },
   {
     id: 'soz-1',
@@ -91,6 +97,7 @@ export const getRecommendedAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-20T09:00:00Z',
     subscriptionCount: 950,
+    version: '2.0.0',
   }
 ];
 
@@ -107,6 +114,7 @@ export const getCommunityAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-05T10:00:00Z',
     subscriptionCount: 120,
+    version: '1.1.0',
   },
   {
     id: 'bau-1',
@@ -120,6 +128,7 @@ export const getCommunityAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-06-15T08:00:00Z',
     subscriptionCount: 45,
+    version: '0.8.0',
   },
   {
     id: 'kvr-2',
@@ -133,6 +142,7 @@ export const getCommunityAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-18T14:20:00Z',
     subscriptionCount: 670,
+    version: '1.5.3',
   },
   {
     id: 'rit-2',
@@ -146,6 +156,7 @@ export const getCommunityAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-26T12:00:00Z',
     subscriptionCount: 330,
+    version: '2.2.1',
   },
   {
     id: 'dir-1',
@@ -159,6 +170,7 @@ export const getCommunityAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-27T08:30:00Z',
     subscriptionCount: 1800,
+    version: '4.0.0',
   },
   {
     id: 'klima-1',
@@ -172,5 +184,6 @@ export const getCommunityAssistants = (): Assistant[] => [
     isPublic: true,
     updatedAt: '2025-10-22T09:15:00Z',
     subscriptionCount: 420,
+    version: '1.4.0',
   }
 ];

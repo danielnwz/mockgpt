@@ -1,4 +1,4 @@
-import { Star, Edit, Plus, Search, FileUp, X, Info, Trash2, Sparkles, Zap, MessageSquare, Check, ChevronDown } from 'lucide-react';
+import { Star, Edit, Plus, Search, FileUp, X, Info, Trash2, Sparkles, Zap, MessageSquare, Check, ChevronDown, Users } from 'lucide-react';
 import { Assistant } from '../types';
 import { useState, useEffect } from 'react';
 
@@ -45,7 +45,7 @@ export function AssistantDiscovery({
   onToggleFavorite,
   favorites,
 }: AssistantDiscoveryProps) {
-  const [filter, setFilter] = useState<'all' | 'recommended' | 'yours' | 'favorites'>('favorites');
+  const [filter, setFilter] = useState<'all' | 'yours' | 'favorites'>('favorites');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
   const [sortBy, setSortBy] = useState<'subscriptions' | 'title' | 'updated'>('subscriptions');
@@ -86,7 +86,6 @@ export function AssistantDiscovery({
   };
 
   const filteredAssistants = assistants.filter((assistant) => {
-    if (filter === 'recommended' && assistant.createdBy !== 'system') return false;
     if (filter === 'yours' && assistant.createdBy !== 'user') return false;
     if (filter === 'favorites' && !favorites.includes(assistant.id)) return false;
 
@@ -165,7 +164,7 @@ export function AssistantDiscovery({
               <div className="flex flex-col sm:flex-row gap-4 sm:items-center flex-shrink-0">
                 {/* Filters */}
                 <div className="flex gap-2 p-1 bg-muted/20 rounded-xl overflow-x-auto no-scrollbar">
-                  {(['all', 'recommended', 'favorites', 'yours'] as const).map((f) => (
+                  {(['all', 'favorites', 'yours'] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
@@ -235,16 +234,18 @@ export function AssistantDiscovery({
                 <div
                   key={assistant.id}
                   onClick={() => setSelectedAssistant(assistant)}
-                  className={`group relative flex flex-col p-4 bg-card rounded-xl border transition-all duration-300 cursor-pointer overflow-hidden ${selectedAssistant?.id === assistant.id
-                    ? 'border-primary ring-1 ring-primary shadow-lg scale-[1.02]'
-                    : 'border-border/50 hover:border-primary/50 shadow-sm hover:shadow-md'
+                  className={`group relative flex flex-col bg-card rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${selectedAssistant?.id === assistant.id
+                    ? 'border-primary ring-1 ring-primary shadow-lg shadow-primary/10 scale-[1.02]'
+                    : 'border-border/50 hover:border-primary/40 shadow-sm hover:shadow-lg hover:-translate-y-0.5'
                     }`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  {/* Gradient overlay on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                  <div className="relative z-[1]">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-background shadow-inner flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
+                  {/* Card body */}
+                  <div className="relative z-[1] p-5 pb-3 flex-1 flex flex-col">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
                         {assistant.icon}
                       </div>
                       <button
@@ -252,29 +253,31 @@ export function AssistantDiscovery({
                           e.stopPropagation();
                           onToggleFavorite(assistant.id);
                         }}
-                        className={`p-1.5 rounded-full transition-colors ${isFav ? 'text-yellow-400 bg-yellow-400/10' : 'text-muted-foreground/30 hover:text-yellow-400 hover:bg-yellow-400/10'
+                        className={`p-1.5 rounded-full transition-all duration-200 ${isFav ? 'text-yellow-400 bg-yellow-400/10 scale-110' : 'text-muted-foreground/20 hover:text-yellow-400 hover:bg-yellow-400/10 opacity-0 group-hover:opacity-100'
                           }`}
                       >
                         <Star className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
                       </button>
                     </div>
 
-                    <h3 className="text-base font-semibold text-foreground mb-1.5 group-hover:text-primary transition-colors line-clamp-1">
+                    <h3 className="text-sm font-bold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
                       {assistant.name}
                     </h3>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3 h-10 leading-relaxed">
+                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed flex-1">
                       {assistant.description}
                     </p>
+                  </div>
 
-                    <div className="flex flex-wrap gap-1.5 mt-auto">
-                      {assistant.allowedTools.slice(0, 2).map((tool) => (
-                        <span key={tool} className={`text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-md border ${getToolColor(tool)}`}>
-                          {formatToolName(tool)}
-                        </span>
-                      ))}
-                      {assistant.allowedTools.length > 2 && (
-                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground border border-border">
-                          +{assistant.allowedTools.length - 2}
+                  {/* Footer */}
+                  <div className="relative z-[1] px-5 py-3 border-t border-border/40 bg-muted/20">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1.5 font-medium" title="Subscribers">
+                        <Users className="w-3.5 h-3.5 text-primary/60" />
+                        {(assistant.subscriptionCount || 0).toLocaleString()}
+                      </span>
+                      {assistant.version && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 font-mono font-medium" title="Version">
+                          v{assistant.version}
                         </span>
                       )}
                     </div>

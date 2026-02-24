@@ -33,6 +33,7 @@ export interface Assistant {
   quickPrompts?: string[];
   updatedAt?: string;
   subscriptionCount?: number;
+  version?: string;
 }
 
 export interface Department {

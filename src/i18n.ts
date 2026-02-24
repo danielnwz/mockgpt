@@ -15,7 +15,7 @@ const translations = {
 
     // Home Page
     startConversation: 'Start a conversation...',
-    recommendedForYou: 'Recommended for you',
+    lastUsed: 'Last used',
     discoverAll: 'Discover all',
 
     // Sidebar
@@ -76,8 +76,8 @@ const translations = {
     send: 'Send',
 
     // Assistant Discovery
-    standardMode: 'Standard Mode',
-    typeStandardMessage: 'Standard Mode • No sensitive data...',
+    standardMode: 'No sensitive data',
+    typeStandardMessage: 'No sensitive data...',
     typeSecureMessage: 'Secure Mode • Safe for sensitive data...',
     discoverAssistants: 'Discover Assistants',
     browseAndUse: 'Browse and use AI assistants for your workflows',
@@ -225,7 +225,7 @@ const translations = {
 
     // Home Page
     startConversation: 'Unterhaltung beginnen...',
-    recommendedForYou: 'Empfohlen für dich',
+    lastUsed: 'Zuletzt verwendet',
     discoverAll: 'Alle entdecken',
 
     // Sidebar
@@ -273,8 +273,8 @@ const translations = {
     send: 'Senden',
 
     // Assistant Discovery
-    standardMode: 'Standard Modus',
-    typeStandardMessage: 'Standard Modus • Keine sensiblen Daten...',
+    standardMode: 'Keine sensiblen Daten',
+    typeStandardMessage: 'Keine sensiblen Daten...',
     typeSecureMessage: 'Sicherer Modus • Sicher für vertrauliche Daten...',
     discoverAssistants: 'Assistenten entdecken',
     browseAndUse: 'Durchsuche und verwende KI-Assistenten für deine Arbeitsabläufe',
