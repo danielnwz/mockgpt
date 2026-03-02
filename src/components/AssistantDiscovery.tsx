@@ -2,6 +2,7 @@ import { Star, Edit, Plus, Search, FileUp, X, Info, Trash2, Sparkles, Zap, Messa
 import { Assistant } from '../types';
 import { useState, useEffect } from 'react';
 import { exportAssistantData } from './AssistantDetailsPage';
+import { ImportAssistantModal } from './ImportAssistantModal';
 
 interface AssistantDiscoveryProps {
   assistants: Assistant[];
@@ -53,6 +54,7 @@ export function AssistantDiscovery({
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
   const [sortBy, setSortBy] = useState<'subscriptions' | 'title' | 'updated'>('subscriptions');
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Close panel when pressing escape
   useEffect(() => {
@@ -67,25 +69,12 @@ export function AssistantDiscovery({
 
 
   const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const imported = JSON.parse(event.target?.result as string);
-            alert(`Imported: ${imported.name} (Simulation)`);
-          } catch (error) {
-            alert('Failed to import.');
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
+    setShowImportModal(true);
+  };
+
+  const handleImportComplete = (importedData: Assistant) => {
+    setShowImportModal(false);
+    onDuplicateAssistant(importedData);
   };
 
   const filteredAssistants = assistants.filter((assistant) => {
@@ -460,6 +449,13 @@ export function AssistantDiscovery({
           </div>
         )}
       </div>
+
+      {showImportModal && (
+        <ImportAssistantModal
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImportComplete}
+        />
+      )}
     </div>
   );
 }

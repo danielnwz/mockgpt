@@ -19,6 +19,11 @@ const translations = {
     discoverAll: 'Discover all',
 
     // Sidebar
+    site_title: 'MUCGPT',
+    assistant_settings: 'Assistant Settings',
+    settings: 'Settings',
+    create_assistant: 'Create Assistant',
+    import_assistant_btn: 'Import Assistant',
     home: 'Home',
     assistants: 'Assistants',
     newChat: 'New Chat',
@@ -214,7 +219,18 @@ const translations = {
         greeting: "Daniel's arrived! 🔥",
         message: "The AIs have been practicing their best responses"
       },
-    ]
+    ],
+    create_btn: 'Create',
+    cancel_btn: 'Cancel',
+    success_msg: 'Assistant created successfully',
+    import_assistant: {
+      title: 'Import Assistant',
+      description: 'Upload an assistant configuration file (.json) to add it to your collection.',
+      dragDrop: 'Drag and drop your JSON file here',
+      clickToBrowse: 'or click to browse',
+      info: 'The file should be a valid JSON exported from MUCGPT containing the assistant\'s configuration. It will be added to your personal workspace.',
+      cancel: 'Cancel',
+    },
   },
   de: {
     // Header
@@ -229,6 +245,11 @@ const translations = {
     discoverAll: 'Alle entdecken',
 
     // Sidebar
+    site_title: 'MUCGPT',
+    assistant_settings: 'Assistenten-Einstellungen',
+    settings: 'Einstellungen',
+    create_assistant: 'Assistent erstellen',
+    import_assistant_btn: 'Assistent importieren',
     home: 'Startseite',
     assistants: 'Assistenten',
     newChat: 'Neuer Chat',
@@ -411,7 +432,18 @@ const translations = {
         greeting: "Da isser ja! 🔥",
         message: "Die KIs haben extra für dich geübt - kann losgehen!"
       },
-    ]
+    ],
+    create_btn: 'Erstellen',
+    cancel_btn: 'Abbrechen',
+    success_msg: 'Assistent erfolgreich erstellt',
+    import_assistant: {
+      title: 'Assistent importieren',
+      description: 'Laden Sie eine Assistenten-Konfigurationsdatei (.json) hoch, um sie Ihrer Sammlung hinzuzufügen.',
+      dragDrop: 'Ziehen Sie Ihre JSON-Datei hierher',
+      clickToBrowse: 'oder klicken Sie zum Durchsuchen',
+      info: 'Die Datei sollte eine gültige JSON-Datei sein, die aus MUCGPT exportiert wurde und die Konfiguration des Assistenten enthält. Er wird Ihrem persönlichen Bereich hinzugefügt.',
+      cancel: 'Abbrechen',
+    },
   },
   // Placeholders for other languages
   es: {} as any,
@@ -440,7 +472,17 @@ export const getLanguage = (): Language => {
 
 export const t = (key: TranslationKey, lang?: Language): string => {
   const targetLang = lang || currentLanguage;
-  return translations[targetLang][key] || translations.en[key] || key;
+  // This is a simplified deep access for the import_assistant block
+  // For other nested keys, a more robust deep access function would be needed.
+  if (typeof translations[targetLang][key] === 'object' && translations[targetLang][key] !== null) {
+    // This case should ideally not happen if TranslationKey is only for top-level keys
+    // and t() is only called with top-level keys.
+    // If t() is expected to handle nested keys like t('import_assistant.title'),
+    // then the TranslationKey type and t function logic need to be more complex.
+    // For now, assuming key is a direct string for a string value.
+    return translations.en[key] as string || key;
+  }
+  return (translations[targetLang][key] as string) || (translations.en[key] as string) || key;
 };
 
 export const getWelcomeMessages = (lang?: Language) => {
