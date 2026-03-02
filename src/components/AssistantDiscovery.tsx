@@ -1,8 +1,18 @@
-import { Star, Edit, Plus, Search, FileUp, X, Info, Trash2, Sparkles, Zap, MessageSquare, Check, ChevronDown, Users, Download, Copy } from 'lucide-react';
+import { Star, Edit, Plus, Search, FileUp, X, Info, Trash2, Sparkles, Zap, MessageSquare, Check, ChevronDown, Users, Download, Copy, MoreVertical } from 'lucide-react';
 import { Assistant } from '../types';
 import { useState, useEffect } from 'react';
 import { exportAssistantData } from './AssistantDetailsPage';
 import { ImportAssistantModal } from './ImportAssistantModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 
 interface AssistantDiscoveryProps {
   assistants: Assistant[];
@@ -55,12 +65,15 @@ export function AssistantDiscovery({
   const [sortBy, setSortBy] = useState<'subscriptions' | 'title' | 'updated'>('subscriptions');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Close panel when pressing escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setSelectedAssistant(null);
+        setShowMoreOptions(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -344,10 +357,10 @@ export function AssistantDiscovery({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-3">
+            <div className="flex relative shadow-md shadow-primary/20 rounded-lg group">
               <button
                 onClick={() => onSelectAssistant(selectedAssistant)}
-                className="btn-primary w-full py-3 shadow-md shadow-primary/20 text-base"
+                className="btn-primary w-full py-3 text-base flex-1 rounded-r-none border-none hover:bg-primary/90 focus:ring-0 transition-colors shadow-none"
               >
                 <div className="flex items-center justify-center gap-2">
                   <MessageSquare className="w-5 h-5" />
@@ -355,43 +368,100 @@ export function AssistantDiscovery({
                 </div>
               </button>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => exportAssistantData(selectedAssistant)}
-                  className="btn-secondary flex-1 justify-center"
-                >
-                  <Download className="w-4 h-4 mr-2" /> Export
-                </button>
-                <button
-                  onClick={() => onDuplicateAssistant(selectedAssistant)}
-                  className="btn-secondary flex-1 justify-center"
-                >
-                  <Copy className="w-4 h-4 mr-2" /> Duplicate
-                </button>
-              </div>
+              {/* Vertical divider */}
+              <div className="w-px bg-primary-foreground/20 z-10 my-1.5" />
 
-              {userAssistants.some(a => a.id === selectedAssistant.id) && (
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => onEditAssistant(selectedAssistant)}
-                    className="btn-secondary flex-1 justify-center"
-                  >
-                    <Edit className="w-4 h-4 mr-2" /> Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm(`Delete ${selectedAssistant.name}?`)) {
-                        onDeleteAssistant(selectedAssistant.id);
-                        setSelectedAssistant(null);
-                      }
-                    }}
-                    className="btn-ghost text-destructive hover:bg-destructive/10 flex-1 justify-center border border-border/50"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                  </button>
-                </div>
+              <button
+                onClick={() => setShowMoreOptions(!showMoreOptions)}
+                className="btn-primary px-3 py-3 border-none rounded-l-none hover:bg-primary/90 focus:ring-0 focus:bg-primary/80 transition-colors shadow-none active:bg-primary/80"
+                aria-label="More options"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {showMoreOptions && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowMoreOptions(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-48 surface-popover z-30 p-1.5 rounded-xl text-sm bg-card border border-border shadow-2xl animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5">
+
+                    {userAssistants.some(a => a.id === selectedAssistant.id) && (
+                      <button
+                        onClick={() => {
+                          onEditAssistant(selectedAssistant);
+                          setShowMoreOptions(false);
+                        }}
+                        className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                      >
+                        <Edit className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <span className="font-medium">Edit</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        onDuplicateAssistant(selectedAssistant);
+                        setShowMoreOptions(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                    >
+                      <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="font-medium">Duplicate</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        exportAssistantData(selectedAssistant);
+                        setShowMoreOptions(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                    >
+                      <Download className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="font-medium">Export</span>
+                    </button>
+
+                    {userAssistants.some(a => a.id === selectedAssistant.id) && (
+                      <>
+                        <div className="h-px bg-border/50 my-1 mx-1" />
+                        <button
+                          onClick={() => {
+                            setShowDeleteDialog(true);
+                            setShowMoreOptions(false);
+                          }}
+                          className="w-full px-3 py-2 text-left hover:bg-destructive/10 text-destructive rounded-md transition-all flex items-center gap-3 group"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span className="font-medium">Delete</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
               )}
             </div>
+
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete "{selectedAssistant.name}" and all of its associated data. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      onDeleteAssistant(selectedAssistant.id);
+                      setSelectedAssistant(null);
+                      setShowDeleteDialog(false);
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             {/* Details */}
             <div className="space-y-6">
