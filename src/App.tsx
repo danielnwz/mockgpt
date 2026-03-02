@@ -191,6 +191,32 @@ export default function App() {
     setCurrentView('discovery');
   };
 
+  const handleDuplicateAssistant = (assistantToDuplicate: Assistant) => {
+    const duplicatedName = assistantToDuplicate.name.endsWith(' (Copy)')
+      ? assistantToDuplicate.name
+      : `${assistantToDuplicate.name} (Copy)`;
+
+    const newAssistant: Assistant = {
+      ...assistantToDuplicate,
+      id: Date.now().toString(),
+      name: duplicatedName,
+      createdBy: 'user',
+      isPublic: false,
+      subscriptionCount: 0,
+      updatedAt: new Date().toISOString(),
+      version: undefined,
+      publishedDepartments: undefined
+    };
+
+    const updatedAssistants = [...assistants, newAssistant];
+    setAssistants(updatedAssistants);
+    localStorage.setItem('assistants', JSON.stringify(updatedAssistants));
+
+    // Open editor with the new duplicated assistant
+    setEditingAssistant(newAssistant);
+    setCurrentView('editor');
+  };
+
   const handleEditAssistant = (assistant: Assistant) => {
     setEditingAssistant(assistant);
     setCurrentView('editor');
@@ -357,6 +383,7 @@ export default function App() {
                     onSelectAssistant={(assistant) => handleStartChat('', assistant)}
                     onEditAssistant={handleEditAssistant}
                     onDeleteAssistant={handleDeleteAssistant}
+                    onDuplicateAssistant={handleDuplicateAssistant}
                     onCreateNew={() => {
                       setEditingAssistant(null);
                       setCurrentView('editor');

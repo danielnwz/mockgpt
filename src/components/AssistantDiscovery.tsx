@@ -1,6 +1,7 @@
-import { Star, Edit, Plus, Search, FileUp, X, Info, Trash2, Sparkles, Zap, MessageSquare, Check, ChevronDown, Users } from 'lucide-react';
+import { Star, Edit, Plus, Search, FileUp, X, Info, Trash2, Sparkles, Zap, MessageSquare, Check, ChevronDown, Users, Download, Copy } from 'lucide-react';
 import { Assistant } from '../types';
 import { useState, useEffect } from 'react';
+import { exportAssistantData } from './AssistantDetailsPage';
 
 interface AssistantDiscoveryProps {
   assistants: Assistant[];
@@ -8,6 +9,7 @@ interface AssistantDiscoveryProps {
   onSelectAssistant: (assistant: Assistant) => void;
   onEditAssistant: (assistant: Assistant) => void;
   onDeleteAssistant: (assistantId: string) => void;
+  onDuplicateAssistant: (assistant: Assistant) => void;
   onCreateNew: () => void;
   onToggleFavorite: (assistantId: string) => void;
   favorites: string[];
@@ -41,6 +43,7 @@ export function AssistantDiscovery({
   onSelectAssistant,
   onEditAssistant,
   onDeleteAssistant,
+  onDuplicateAssistant,
   onCreateNew,
   onToggleFavorite,
   favorites,
@@ -362,6 +365,21 @@ export function AssistantDiscovery({
                   Start Conversation
                 </div>
               </button>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => exportAssistantData(selectedAssistant)}
+                  className="btn-secondary flex-1 justify-center"
+                >
+                  <Download className="w-4 h-4 mr-2" /> Export
+                </button>
+                <button
+                  onClick={() => onDuplicateAssistant(selectedAssistant)}
+                  className="btn-secondary flex-1 justify-center"
+                >
+                  <Copy className="w-4 h-4 mr-2" /> Duplicate
+                </button>
+              </div>
 
               {userAssistants.some(a => a.id === selectedAssistant.id) && (
                 <div className="flex gap-3">

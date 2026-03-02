@@ -4,6 +4,7 @@ import { Assistant, ResponseBehavior } from '../types';
 import { ChatPreview } from './ChatPreview';
 import { DepartmentTree } from './DepartmentTree';
 import { departments } from '../data/departments';
+import { exportAssistantData } from './AssistantDetailsPage';
 
 interface AssistantEditorProps {
   assistant: Assistant | null;
@@ -195,7 +196,13 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
   };
 
   const handleExport = () => {
+    if (!name.trim() || !description.trim()) {
+      alert('Cannot export an incomplete assistant.');
+      return;
+    }
+
     const assistantData = {
+      id: assistant?.id || 'new-assistant',
       name: name.trim(),
       description: description.trim(),
       icon,
@@ -204,18 +211,11 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       allowedTools,
       publishedDepartments: selectedDepartments,
       quickPrompts,
-    };
+      createdBy: assistant?.createdBy || 'user',
+      isPublic: assistant?.isPublic || false,
+    } as Assistant;
 
-    const dataStr = JSON.stringify(assistantData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${name.trim() || 'assistant'}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    exportAssistantData(assistantData);
   };
 
   const previewAssistant: Assistant = {

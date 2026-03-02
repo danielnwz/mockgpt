@@ -1,4 +1,4 @@
-import { ArrowLeft, MessageSquare, Edit, Trash2, Zap, Info, Star, Sparkles } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Edit, Trash2, Zap, Info, Star, Sparkles, Download, Copy } from 'lucide-react';
 import { Assistant } from '../types';
 
 interface AssistantDetailsPageProps {
@@ -10,7 +10,32 @@ interface AssistantDetailsPageProps {
     isFavorite: boolean;
     onToggleFavorite: (assistantId: string) => void;
     isUserAssistant: boolean;
+    onDuplicateAssistant?: (assistant: Assistant) => void;
 }
+// Helper function to handle exporting an assistant
+export const exportAssistantData = (assistant: Assistant) => {
+    const assistantData = {
+        name: assistant.name.trim(),
+        description: assistant.description.trim(),
+        icon: assistant.icon,
+        systemPrompt: assistant.systemPrompt.trim(),
+        responseBehavior: assistant.responseBehavior,
+        allowedTools: assistant.allowedTools,
+        publishedDepartments: assistant.publishedDepartments,
+        quickPrompts: assistant.quickPrompts,
+    };
+
+    const dataStr = JSON.stringify(assistantData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${assistant.name.trim() || 'assistant'}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
 
 // Helper function to format tool names (reused or imported if shared)
 const formatToolName = (tool: string): string => {
@@ -41,8 +66,13 @@ export function AssistantDetailsPage({
     onDelete,
     isFavorite,
     onToggleFavorite,
-    isUserAssistant
+    isUserAssistant,
+    onDuplicateAssistant
 }: AssistantDetailsPageProps) {
+
+    const handleExport = () => {
+        exportAssistantData(assistant);
+    };
 
     return (
         <div className="h-full flex flex-col bg-background animate-in fade-in duration-300 overflow-y-auto">
@@ -60,8 +90,8 @@ export function AssistantDetailsPage({
                 <button
                     onClick={() => onToggleFavorite(assistant.id)}
                     className={`p-2 rounded-full transition-colors border ${isFavorite
-                            ? 'bg-yellow-50 border-yellow-200 text-yellow-500'
-                            : 'hover:bg-accent border-transparent text-muted-foreground'
+                        ? 'bg-yellow-50 border-yellow-200 text-yellow-500'
+                        : 'hover:bg-accent border-transparent text-muted-foreground'
                         }`}
                 >
                     <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
@@ -99,6 +129,22 @@ export function AssistantDetailsPage({
                                     Start Conversation
                                 </div>
                             </button>
+
+                            <button
+                                onClick={handleExport}
+                                className="btn-secondary px-5"
+                            >
+                                <Download className="w-4 h-4 mr-2" /> Export
+                            </button>
+
+                            {onDuplicateAssistant && (
+                                <button
+                                    onClick={() => onDuplicateAssistant(assistant)}
+                                    className="btn-secondary px-5"
+                                >
+                                    <Copy className="w-4 h-4 mr-2" /> Duplicate
+                                </button>
+                            )}
 
                             {isUserAssistant && (
                                 <>
