@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Settings, ChevronDown, ShieldCheck, Globe, AlertTriangle, Info, MapPin } from 'lucide-react';
 import { Chat, Assistant, ResponseBehavior } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
+import { AssistantDetailsSidebar } from './AssistantDetailsSidebar';
 
 interface ChatWindowProps {
   chat: Chat;
@@ -10,12 +11,30 @@ interface ChatWindowProps {
   onBack: () => void;
   onUpdateChat?: (chat: Chat) => void;
   onEditAssistant?: (assistant: Assistant) => void;
+  onDuplicateAssistant?: (assistant: Assistant) => void;
+  onDeleteAssistant?: (assistantId: string) => void;
+  onToggleSubscribe?: (assistantId: string) => void;
+  userAssistants?: Assistant[];
+  subscribedIds?: string[];
 
   privateMode: boolean;
   onEnableSecureMode?: () => void;
 }
 
-export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEditAssistant, privateMode, onEnableSecureMode }: ChatWindowProps) {
+export function ChatWindow({
+  chat,
+  assistant,
+  onSendMessage,
+  onUpdateChat,
+  onEditAssistant,
+  onDuplicateAssistant,
+  onDeleteAssistant,
+  onToggleSubscribe,
+  userAssistants = [],
+  subscribedIds = [],
+  privateMode,
+  onEnableSecureMode
+}: ChatWindowProps) {
   const { t } = useTranslation();
 
   const getLLMModels = () => {
@@ -79,6 +98,7 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
   const [showLLMMenu, setShowLLMMenu] = useState(false);
   const [showModelDetails, setShowModelDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAssistantDetails, setShowAssistantDetails] = useState(false);
   const [selectedLLM, setSelectedLLM] = useState(chat.llmModel || 'gpt-4');
   const [chatResponseBehavior, setChatResponseBehavior] = useState<ResponseBehavior>(
     chat.responseBehavior || assistant?.responseBehavior || 'balanced'
@@ -131,435 +151,478 @@ export function ChatWindow({ chat, assistant, onSendMessage, onUpdateChat, onEdi
     setShowSettings(false);
   };
 
+  const isOwner = assistant && (userAssistants?.some(a => a.id === assistant.id) || assistant.createdBy === 'user');
+
   return (
-    <div className="h-full flex flex-col bg-card/80 backdrop-blur-sm">
-      {/* Chat Header with Assistant Info */}
-      {assistant && (
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-transparent">
-          <div className="flex items-center gap-3 flex-1">
-            <span className="text-3xl">{assistant.icon}</span>
-            <div>
-              <h2 className="type-section text-foreground">{assistant.name}</h2>
-              <p className="type-muted">{assistant.description}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* LLM Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setShowLLMMenu(!showLLMMenu)}
-                className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border font-medium ${privateMode
-                  ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
-                  : 'bg-secondary/40 text-secondary-foreground border-border hover:bg-secondary/60'
-                  }`}
-                title={t('selectAIModel')}
-              >
-                {privateMode && <ShieldCheck className="w-4 h-4" />}
-                {getLLMModels().find(m => m.id === selectedLLM)?.name || (privateMode ? 'MUC-GPT Secure' : 'GPT-4 (Standard)')}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {showLLMMenu && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => { setShowLLMMenu(false); setShowModelDetails(false); }} />
-                  <div className={`absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-20 transition-all duration-200 ${showModelDetails ? 'w-[480px]' : 'w-80'}`}>
-                    <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setShowModelDetails(!showModelDetails); }}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${showModelDetails ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                      >
-                        <Info className="w-3 h-3" />
-                        {showModelDetails ? 'Simple' : 'Details'}
-                      </button>
-                    </div>
-                    <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
-                      {getLLMModels().map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => handleLLMChange(model.id)}
-                          className={`w-full px-4 py-3 text-left hover:bg-accent/60 transition-colors border-b border-border/30 last:border-0 ${selectedLLM === model.id ? 'bg-accent/40' : ''}`}
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-0.5">
-                            <span className="text-sm font-semibold text-foreground">{model.name}</span>
-                            {selectedLLM === model.id && (
-                              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">{model.description}</p>
-                          {showModelDetails && (
-                            <div className="mt-2.5 rounded-lg bg-muted/20 border border-border/30 overflow-hidden">
-                              <div className="grid grid-cols-2 gap-px bg-border/20">
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Input cost</span>
-                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costInput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
-                                    {model.costInput === 0 ? '✓ Free' : `$${model.costInput}/1K`}
-                                  </span>
-                                </div>
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Output cost</span>
-                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costOutput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
-                                    {model.costOutput === 0 ? '✓ Free' : `$${model.costOutput}/1K`}
-                                  </span>
-                                </div>
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Knowledge</span>
-                                  <span className="text-[11px] font-semibold text-foreground">{model.knowledgeCutoff}</span>
-                                </div>
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Max input</span>
-                                  <span className="text-[11px] font-mono font-semibold text-foreground">{(model.maxInput).toLocaleString()} tok</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 px-3 py-2 bg-card/60 border-t border-border/20">
-                                <MapPin className="w-3 h-3 text-primary/50 flex-shrink-0" />
-                                <span className="text-[10px] text-muted-foreground">{model.provider}</span>
-                                <span className="text-muted-foreground/30">·</span>
-                                <span className="text-[10px] font-medium text-foreground">{model.location}</span>
-                              </div>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => {
-                if (onEditAssistant && assistant) {
-                  onEditAssistant(assistant);
-                } else {
-                  setShowSettings(true);
-                }
-              }}
-              className="p-2 hover:bg-accent rounded-lg transition-colors"
+    <div className="h-full flex overflow-hidden">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col bg-card/80 backdrop-blur-sm relative transition-all duration-300">
+        {/* Chat Header with Assistant Info */}
+        {assistant && (
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-transparent">
+            <div
+              className="flex items-center gap-3 flex-1 cursor-pointer hover:bg-accent/40 rounded-xl p-2 -ml-2 transition-colors group"
+              onClick={() => setShowAssistantDetails(true)}
             >
-              <Settings className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Simple Chat Header (no assistant) */}
-      {!assistant && (
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-transparent">
-          <h2 className="type-section text-foreground">{t('chat')}</h2>
-          <div className="flex items-center gap-2">
-            {/* LLM Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setShowLLMMenu(!showLLMMenu)}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-secondary/40 text-secondary-foreground rounded-lg hover:bg-secondary/60 transition-colors border border-border font-medium"
-                title={t('selectAIModel')}
-              >
-                {getLLMModels().find(m => m.id === selectedLLM)?.name}
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              {showLLMMenu && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => { setShowLLMMenu(false); setShowModelDetails(false); }} />
-                  <div className={`absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-20 transition-all duration-200 ${showModelDetails ? 'w-[480px]' : 'w-80'}`}>
-                    <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
-                      </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setShowModelDetails(!showModelDetails); }}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${showModelDetails ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                      >
-                        <Info className="w-3 h-3" />
-                        {showModelDetails ? 'Simple' : 'Details'}
-                      </button>
-                    </div>
-                    <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
-                      {getLLMModels().map((model) => (
-                        <button
-                          key={model.id}
-                          onClick={() => handleLLMChange(model.id)}
-                          className={`w-full px-4 py-3 text-left hover:bg-accent/60 transition-colors border-b border-border/30 last:border-0 ${selectedLLM === model.id ? 'bg-accent/40' : ''}`}
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-0.5">
-                            <span className="text-sm font-semibold text-foreground">{model.name}</span>
-                            {selectedLLM === model.id && (
-                              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">{model.description}</p>
-                          {showModelDetails && (
-                            <div className="mt-2.5 rounded-lg bg-muted/20 border border-border/30 overflow-hidden">
-                              <div className="grid grid-cols-2 gap-px bg-border/20">
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Input cost</span>
-                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costInput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
-                                    {model.costInput === 0 ? '✓ Free' : `$${model.costInput}/1K`}
-                                  </span>
-                                </div>
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Output cost</span>
-                                  <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costOutput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
-                                    {model.costOutput === 0 ? '✓ Free' : `$${model.costOutput}/1K`}
-                                  </span>
-                                </div>
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Knowledge</span>
-                                  <span className="text-[11px] font-semibold text-foreground">{model.knowledgeCutoff}</span>
-                                </div>
-                                <div className="bg-card/80 px-3 py-2">
-                                  <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Max input</span>
-                                  <span className="text-[11px] font-mono font-semibold text-foreground">{(model.maxInput).toLocaleString()} tok</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 px-3 py-2 bg-card/60 border-t border-border/20">
-                                <MapPin className="w-3 h-3 text-primary/50 flex-shrink-0" />
-                                <span className="text-[10px] text-muted-foreground">{model.provider}</span>
-                                <span className="text-muted-foreground/30">·</span>
-                                <span className="text-[10px] font-medium text-foreground">{model.location}</span>
-                              </div>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="p-2 hover:bg-accent rounded-lg transition-colors"
-            >
-              <Settings className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowSettings(false)}>
-          <div className="bg-card rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="space-y-1 mb-5">
-              <h2 className="type-title text-foreground">{t('chatSettings')}</h2>
-              <p className="text-xs text-muted-foreground">{t('customizeAIResponses')}</p>
-            </div>
-
-            <div className="space-y-6">
-              {/* Response Behavior */}
-              <div className="surface-card bg-card/70 p-4">
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  {t('responseStyle')}
-                </label>
-                <p className="text-xs text-muted-foreground mb-3">{t('chooseResponseCreativity')}</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {getResponseBehaviors().map((behavior) => (
-                    <button
-                      key={behavior.value}
-                      onClick={() => setChatResponseBehavior(behavior.value)}
-                      className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${chatResponseBehavior === behavior.value
-                        ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2'
-                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border'
-                        }`}
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        <span>{behavior.label}</span>
-                        {chatResponseBehavior === behavior.value && (
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        <span className={`text-xs text-center ${chatResponseBehavior === behavior.value ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
-                          {behavior.description}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* System Prompt */}
+              <span className="text-3xl group-hover:scale-105 transition-transform">{assistant.icon}</span>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  {t('customInstructions')}
-                </label>
-                <p className="text-xs text-muted-foreground mb-3">{t('tellAIHowToBehave')}</p>
-                <textarea
-                  value={chatSystemPrompt}
-                  onChange={(e) => setChatSystemPrompt(e.target.value)}
-                  placeholder={t('customInstructionsPlaceholder')}
-                  rows={6}
-                  className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none bg-background text-foreground text-sm"
-                />
+                <h2 className="type-section text-foreground group-hover:text-primary transition-colors">{assistant.name}</h2>
+                <p className="type-muted line-clamp-1 max-w-md">{assistant.description}</p>
               </div>
             </div>
-
-            <div className="flex items-center justify-between mt-6">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="btn-ghost btn-lg"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleSaveSettings}
-                className="btn-primary btn-lg"
-              >
-                {t('saveChanges')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {chat.messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-            <div className="text-center space-y-4 max-w-2xl">
-              {assistant && (
-                <>
-                  <span className="text-6xl animate-fade-up">{assistant.icon}</span>
-                  <h2 className="text-2xl text-foreground animate-fade-up" style={{ animationDelay: '60ms' }}>
-                    {assistant.name}
-                  </h2>
-                  <p className="text-sm text-muted-foreground/70 mt-1 animate-fade-up" style={{ animationDelay: '120ms' }}>
-                    Try a quick prompt below or start typing.
-                  </p>
-
-                  {/* Quick Prompts */}
-                  {assistant.quickPrompts && assistant.quickPrompts.length > 0 && (
-                    <div className="mt-6 w-full max-w-2xl">
-                      <div className="text-center space-y-2 mb-4">
-                        <h3 className="text-lg font-semibold text-foreground">Pick one to start</h3>
+            <div className="flex items-center gap-2">
+              {/* LLM Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowLLMMenu(!showLLMMenu)}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border font-medium ${privateMode
+                    ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
+                    : 'bg-secondary/40 text-secondary-foreground border-border hover:bg-secondary/60'
+                    }`}
+                  title={t('selectAIModel')}
+                >
+                  {privateMode && <ShieldCheck className="w-4 h-4" />}
+                  {getLLMModels().find(m => m.id === selectedLLM)?.name || (privateMode ? 'MUC-GPT Secure' : 'GPT-4 (Standard)')}
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {showLLMMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => { setShowLLMMenu(false); setShowModelDetails(false); }} />
+                    <div className={`absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-20 transition-all duration-200 ${showModelDetails ? 'w-[480px]' : 'w-80'}`}>
+                      <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowModelDetails(!showModelDetails); }}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${showModelDetails ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+                        >
+                          <Info className="w-3 h-3" />
+                          {showModelDetails ? 'Simple' : 'Details'}
+                        </button>
                       </div>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {assistant.quickPrompts.map((prompt, index) => (
+                      <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
+                        {getLLMModels().map((model) => (
                           <button
-                            key={index}
-                            onClick={() => {
-                              setInput(prompt);
-                            }}
-                            className="group rounded-2xl border bg-primary/10 px-5 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md animate-fade-up"
-                            style={{ animationDelay: `${index * 60}ms` }}
+                            key={model.id}
+                            onClick={() => handleLLMChange(model.id)}
+                            className={`w-full px-4 py-3 text-left hover:bg-accent/60 transition-colors border-b border-border/30 last:border-0 ${selectedLLM === model.id ? 'bg-accent/40' : ''}`}
                           >
-                            <div className="flex items-start justify-between gap-3">
-                              <span className="text-sm font-medium text-foreground">{prompt}</span>
-                              <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                                ↗
-                              </span>
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                              <span className="text-sm font-semibold text-foreground">{model.name}</span>
+                              {selectedLLM === model.id && (
+                                <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
                             </div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">{model.description}</p>
+                            {showModelDetails && (
+                              <div className="mt-2.5 rounded-lg bg-muted/20 border border-border/30 overflow-hidden">
+                                <div className="grid grid-cols-2 gap-px bg-border/20">
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Input cost</span>
+                                    <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costInput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                      {model.costInput === 0 ? '✓ Free' : `$${model.costInput}/1K`}
+                                    </span>
+                                  </div>
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Output cost</span>
+                                    <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costOutput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                      {model.costOutput === 0 ? '✓ Free' : `$${model.costOutput}/1K`}
+                                    </span>
+                                  </div>
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Knowledge</span>
+                                    <span className="text-[11px] font-semibold text-foreground">{model.knowledgeCutoff}</span>
+                                  </div>
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Max input</span>
+                                    <span className="text-[11px] font-mono font-semibold text-foreground">{(model.maxInput).toLocaleString()} tok</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-card/60 border-t border-border/20">
+                                  <MapPin className="w-3 h-3 text-primary/50 flex-shrink-0" />
+                                  <span className="text-[10px] text-muted-foreground">{model.provider}</span>
+                                  <span className="text-muted-foreground/30">·</span>
+                                  <span className="text-[10px] font-medium text-foreground">{model.location}</span>
+                                </div>
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
                     </div>
-                  )}
-                </>
-              )}
-              {!assistant && (
-                <>
-                  <div className="text-5xl mb-4">💬</div>
-                  <h2 className="text-xl text-foreground mb-2">Ready to chat?</h2>
-                  <p className="text-muted-foreground">Start the conversation by typing a message below!</p>
-                </>
+                  </>
+                )}
+              </div>
+
+              {isOwner ? (
+                <button
+                  onClick={() => {
+                    if (onEditAssistant && assistant) {
+                      onEditAssistant(assistant);
+                    } else {
+                      setShowSettings(true);
+                    }
+                  }}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors border border-transparent hover:border-border"
+                  title="Edit Assistant"
+                >
+                  <Settings className="w-5 h-5 text-muted-foreground" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowAssistantDetails(true)}
+                  className={`p-2 hover:bg-accent rounded-lg transition-colors border ${showAssistantDetails ? 'bg-accent border-border text-foreground' : 'border-transparent hover:border-border text-muted-foreground'}`}
+                  title="Assistant Info"
+                >
+                  <Info className="w-5 h-5" />
+                </button>
               )}
             </div>
           </div>
         )}
 
-        {chat.messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-          >
-            {message.role === 'assistant' && assistant && (
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-lg">
-                {assistant.icon}
+        {/* Simple Chat Header (no assistant) */}
+        {!assistant && (
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-transparent">
+            <h2 className="type-section text-foreground">{t('chat')}</h2>
+            <div className="flex items-center gap-2">
+              {/* LLM Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowLLMMenu(!showLLMMenu)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-secondary/40 text-secondary-foreground rounded-lg hover:bg-secondary/60 transition-colors border border-border font-medium"
+                  title={t('selectAIModel')}
+                >
+                  {getLLMModels().find(m => m.id === selectedLLM)?.name}
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {showLLMMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => { setShowLLMMenu(false); setShowModelDetails(false); }} />
+                    <div className={`absolute right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-xl z-20 transition-all duration-200 ${showModelDetails ? 'w-[480px]' : 'w-80'}`}>
+                      <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">{t('selectAIModel')}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">{t('chooseAIForChat')}</p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowModelDetails(!showModelDetails); }}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${showModelDetails ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+                        >
+                          <Info className="w-3 h-3" />
+                          {showModelDetails ? 'Simple' : 'Details'}
+                        </button>
+                      </div>
+                      <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
+                        {getLLMModels().map((model) => (
+                          <button
+                            key={model.id}
+                            onClick={() => handleLLMChange(model.id)}
+                            className={`w-full px-4 py-3 text-left hover:bg-accent/60 transition-colors border-b border-border/30 last:border-0 ${selectedLLM === model.id ? 'bg-accent/40' : ''}`}
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-0.5">
+                              <span className="text-sm font-semibold text-foreground">{model.name}</span>
+                              {selectedLLM === model.id && (
+                                <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">{model.description}</p>
+                            {showModelDetails && (
+                              <div className="mt-2.5 rounded-lg bg-muted/20 border border-border/30 overflow-hidden">
+                                <div className="grid grid-cols-2 gap-px bg-border/20">
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Input cost</span>
+                                    <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costInput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                      {model.costInput === 0 ? '✓ Free' : `$${model.costInput}/1K`}
+                                    </span>
+                                  </div>
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Output cost</span>
+                                    <span className={`inline-flex items-center text-[11px] font-bold px-1.5 py-0.5 rounded ${model.costOutput === 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                                      {model.costOutput === 0 ? '✓ Free' : `$${model.costOutput}/1K`}
+                                    </span>
+                                  </div>
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Knowledge</span>
+                                    <span className="text-[11px] font-semibold text-foreground">{model.knowledgeCutoff}</span>
+                                  </div>
+                                  <div className="bg-card/80 px-3 py-2">
+                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-semibold block mb-1">Max input</span>
+                                    <span className="text-[11px] font-mono font-semibold text-foreground">{(model.maxInput).toLocaleString()} tok</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-card/60 border-t border-border/20">
+                                  <MapPin className="w-3 h-3 text-primary/50 flex-shrink-0" />
+                                  <span className="text-[10px] text-muted-foreground">{model.provider}</span>
+                                  <span className="text-muted-foreground/30">·</span>
+                                  <span className="text-[10px] font-medium text-foreground">{model.location}</span>
+                                </div>
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-            {message.role === 'assistant' && !assistant && (
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xl shadow-md">
-                🤖
-              </div>
-            )}
-            <div
-              className={`max-w-2xl rounded-2xl px-5 py-3 ${message.role === 'user'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-secondary-foreground'
-                }`}
-            >
-              <p className="whitespace-pre-wrap">{message.content}</p>
-              <div
-                className={`text-xs mt-2 ${message.role === 'user' ? 'opacity-80' : 'text-muted-foreground'
-                  }`}
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-2 hover:bg-accent rounded-lg transition-colors"
               >
-                {new Date(message.timestamp).toLocaleTimeString()}
+                <Settings className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowSettings(false)}>
+            <div className="bg-card rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="space-y-1 mb-5">
+                <h2 className="type-title text-foreground">{t('chatSettings')}</h2>
+                <p className="text-xs text-muted-foreground">{t('customizeAIResponses')}</p>
+              </div>
+
+              <div className="space-y-6">
+                {/* Response Behavior */}
+                <div className="surface-card bg-card/70 p-4">
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {t('responseStyle')}
+                  </label>
+                  <p className="text-xs text-muted-foreground mb-3">{t('chooseResponseCreativity')}</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {getResponseBehaviors().map((behavior) => (
+                      <button
+                        key={behavior.value}
+                        onClick={() => setChatResponseBehavior(behavior.value)}
+                        className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${chatResponseBehavior === behavior.value
+                          ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border'
+                          }`}
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <span>{behavior.label}</span>
+                          {chatResponseBehavior === behavior.value && (
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          <span className={`text-xs text-center ${chatResponseBehavior === behavior.value ? 'text-primary-foreground/90' : 'text-muted-foreground'}`}>
+                            {behavior.description}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* System Prompt */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {t('customInstructions')}
+                  </label>
+                  <p className="text-xs text-muted-foreground mb-3">{t('tellAIHowToBehave')}</p>
+                  <textarea
+                    value={chatSystemPrompt}
+                    onChange={(e) => setChatSystemPrompt(e.target.value)}
+                    placeholder={t('customInstructionsPlaceholder')}
+                    rows={6}
+                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none bg-background text-foreground text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-6">
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="btn-ghost btn-lg"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={handleSaveSettings}
+                  className="btn-primary btn-lg"
+                >
+                  {t('saveChanges')}
+                </button>
               </div>
             </div>
-            {message.role === 'user' && (
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/90 to-primary flex items-center justify-center text-primary-foreground text-xl shadow-md">
-                👤
+          </div>
+        )}
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {chat.messages.length === 0 && (
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
+              <div className="text-center space-y-4 max-w-2xl">
+                {assistant && (
+                  <>
+                    <span className="text-6xl animate-fade-up">{assistant.icon}</span>
+                    <h2 className="text-2xl text-foreground animate-fade-up" style={{ animationDelay: '60ms' }}>
+                      {assistant.name}
+                    </h2>
+                    <p className="text-sm text-muted-foreground/70 mt-1 animate-fade-up" style={{ animationDelay: '120ms' }}>
+                      Try a quick prompt below or start typing.
+                    </p>
+
+                    {/* Quick Prompts */}
+                    {assistant.quickPrompts && assistant.quickPrompts.length > 0 && (
+                      <div className="mt-6 w-full max-w-2xl">
+                        <div className="text-center space-y-2 mb-4">
+                          <h3 className="text-lg font-semibold text-foreground">Pick one to start</h3>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          {assistant.quickPrompts.map((prompt, index) => (
+                            <button
+                              key={index}
+                              onClick={() => {
+                                setInput(prompt);
+                              }}
+                              className="group rounded-2xl border bg-primary/10 px-5 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md animate-fade-up"
+                              style={{ animationDelay: `${index * 60}ms` }}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <span className="text-sm font-medium text-foreground">{prompt}</span>
+                                <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                                  ↗
+                                </span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+                {!assistant && (
+                  <>
+                    <div className="text-5xl mb-4">💬</div>
+                    <h2 className="text-xl text-foreground mb-2">Ready to chat?</h2>
+                    <p className="text-muted-foreground">Start the conversation by typing a message below!</p>
+                  </>
+                )}
               </div>
-            )}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
+            </div>
+          )}
 
-      {/* Input */}
-      <div className="p-6">
-        <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl gap-3">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={privateMode
-                ? (t('typeSecureMessage') || "Type a secure message...")
-                : (t('typeStandardMessage') || "Type a message...")
-              }
-              className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground shadow-sm transition-all ${privateMode
-                ? 'border-primary/50 focus:ring-primary pr-36 pl-10'
-                : 'border-border pr-36 pl-10'
+          {chat.messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}
-            />
+            >
+              {message.role === 'assistant' && assistant && (
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-lg">
+                  {assistant.icon}
+                </div>
+              )}
+              {message.role === 'assistant' && !assistant && (
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xl shadow-md">
+                  🤖
+                </div>
+              )}
+              <div
+                className={`max-w-2xl rounded-2xl px-5 py-3 ${message.role === 'user'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-secondary-foreground'
+                  }`}
+              >
+                <p className="whitespace-pre-wrap">{message.content}</p>
+                <div
+                  className={`text-xs mt-2 ${message.role === 'user' ? 'opacity-80' : 'text-muted-foreground'
+                    }`}
+                >
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </div>
+              </div>
+              {message.role === 'user' && (
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/90 to-primary flex items-center justify-center text-primary-foreground text-xl shadow-md">
+                  👤
+                </div>
+              )}
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
 
-            {privateMode ? (
-              <>
-                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-pulse" />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 select-none">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold whitespace-nowrap">Secure Mode</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 select-none">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span className="text-xs font-semibold whitespace-nowrap">No sensitive data</span>
-                </div>
-              </>
-            )}
-          </div>
-          <button
-            type="submit"
-            disabled={!input.trim()}
-            className="btn-primary btn-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-          >
-            <Send className="w-5 h-5" />
-            <span>{t('send')}</span>
-          </button>
-        </form>
+        {/* Input */}
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl gap-3">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={privateMode
+                  ? (t('typeSecureMessage') || "Type a secure message...")
+                  : (t('typeStandardMessage') || "Type a message...")
+                }
+                className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground shadow-sm transition-all ${privateMode
+                  ? 'border-primary/50 focus:ring-primary pr-36 pl-10'
+                  : 'border-border pr-36 pl-10'
+                  }`}
+              />
+
+              {privateMode ? (
+                <>
+                  <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-pulse" />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 select-none">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span className="text-xs font-semibold whitespace-nowrap">Secure Mode</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 select-none">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span className="text-xs font-semibold whitespace-nowrap">No sensitive data</span>
+                  </div>
+                </>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={!input.trim()}
+              className="btn-primary btn-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            >
+              <Send className="w-5 h-5" />
+              <span>{t('send')}</span>
+            </button>
+          </form>
+        </div>
       </div>
+
+      {/* Assistant Details Sidebar */}
+      {assistant && (
+        <div
+          className={`bg-card border-l border-border h-full overflow-y-auto transition-all duration-300 ease-in-out ${showAssistantDetails ? 'w-[400px] translate-x-0 opacity-100' : 'w-0 translate-x-full opacity-0 border-none'
+            }`}
+        >
+          {showAssistantDetails && (
+            <AssistantDetailsSidebar
+              assistant={assistant}
+              userAssistants={userAssistants}
+              subscribedIds={subscribedIds}
+              onClose={() => setShowAssistantDetails(false)}
+              onSelectAssistant={() => setShowAssistantDetails(false)}
+              onEditAssistant={onEditAssistant}
+              onDuplicateAssistant={onDuplicateAssistant}
+              onDeleteAssistant={onDeleteAssistant}
+              onToggleSubscribe={onToggleSubscribe}
+              showStartConversationButton={false}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

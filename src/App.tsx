@@ -42,8 +42,8 @@ export default function App() {
   });
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
   const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null);
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('favorites');
+  const [subscribedIds, setSubscribedIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('subscribedAssistants');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -243,21 +243,21 @@ export default function App() {
     setAssistants(updatedAssistants);
     localStorage.setItem('assistants', JSON.stringify(updatedAssistants));
 
-    // Remove from favorites if it's there
-    if (favorites.includes(assistantId)) {
-      const updatedFavorites = favorites.filter(id => id !== assistantId);
-      setFavorites(updatedFavorites);
-      localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+    // Remove from subscribed if it's there
+    if (subscribedIds.includes(assistantId)) {
+      const updatedSubscribed = subscribedIds.filter(id => id !== assistantId);
+      setSubscribedIds(updatedSubscribed);
+      localStorage.setItem('subscribedAssistants', JSON.stringify(updatedSubscribed));
     }
   };
 
 
-  const handleToggleFavorite = (assistantId: string) => {
-    const updatedFavorites = favorites.includes(assistantId)
-      ? favorites.filter(id => id !== assistantId)
-      : [...favorites, assistantId];
-    setFavorites(updatedFavorites);
-    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+  const handleToggleSubscribe = (assistantId: string) => {
+    const updatedSubscribed = subscribedIds.includes(assistantId)
+      ? subscribedIds.filter(id => id !== assistantId)
+      : [...subscribedIds, assistantId];
+    setSubscribedIds(updatedSubscribed);
+    localStorage.setItem('subscribedAssistants', JSON.stringify(updatedSubscribed));
   };
 
   const handleSelectChat = (chat: Chat) => {
@@ -377,6 +377,11 @@ export default function App() {
                   onBack={() => setCurrentView('home')}
                   onUpdateChat={handleUpdateChat}
                   onEditAssistant={handleEditAssistant}
+                  onDuplicateAssistant={handleDuplicateAssistant}
+                  onDeleteAssistant={handleDeleteAssistant}
+                  onToggleSubscribe={handleToggleSubscribe}
+                  userAssistants={userAssistants}
+                  subscribedIds={subscribedIds}
                   // @ts-ignore - Prop will be added in next step
                   privateMode={privateMode}
                   onEnableSecureMode={handleEnableSecureMode}
@@ -396,8 +401,8 @@ export default function App() {
                       setEditingAssistant(null);
                       setCurrentView('editor');
                     }}
-                    onToggleFavorite={handleToggleFavorite}
-                    favorites={favorites}
+                    onToggleSubscribe={handleToggleSubscribe}
+                    subscribedIds={subscribedIds}
                   />
 
                   {currentView === 'editor' && (

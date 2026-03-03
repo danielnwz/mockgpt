@@ -7,8 +7,8 @@ interface AssistantDetailsPageProps {
     onStartChat: (assistant: Assistant) => void;
     onEdit: (assistant: Assistant) => void;
     onDelete: (assistantId: string) => void;
-    isFavorite: boolean;
-    onToggleFavorite: (assistantId: string) => void;
+    isSubscribed: boolean;
+    onToggleSubscribe: (assistantId: string) => void;
     isUserAssistant: boolean;
     onDuplicateAssistant?: (assistant: Assistant) => void;
 }
@@ -64,8 +64,8 @@ export function AssistantDetailsPage({
     onStartChat,
     onEdit,
     onDelete,
-    isFavorite,
-    onToggleFavorite,
+    isSubscribed,
+    onToggleSubscribe,
     isUserAssistant,
     onDuplicateAssistant
 }: AssistantDetailsPageProps) {
@@ -88,13 +88,13 @@ export function AssistantDetailsPage({
                     Assistant Details
                 </h1>
                 <button
-                    onClick={() => onToggleFavorite(assistant.id)}
-                    className={`p-2 rounded-full transition-colors border ${isFavorite
+                    onClick={() => onToggleSubscribe(assistant.id)}
+                    className={`p-2 rounded-full transition-colors border ${isSubscribed
                         ? 'bg-yellow-50 border-yellow-200 text-yellow-500'
                         : 'hover:bg-accent border-transparent text-muted-foreground'
                         }`}
                 >
-                    <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                    <Star className={`w-5 h-5 ${isSubscribed ? 'fill-current' : ''}`} />
                 </button>
             </div>
 
