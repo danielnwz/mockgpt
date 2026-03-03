@@ -91,8 +91,14 @@ export function AssistantDiscovery({
   };
 
   const filteredAssistants = assistants.filter((assistant) => {
+    // Hide soft-deleted assistants from the "all" view
+    if (filter === 'all' && assistant.deletedByOwner) return false;
+
     if (filter === 'yours' && assistant.createdBy !== 'user') return false;
-    if (filter === 'favorites' && !favorites.includes(assistant.id)) return false;
+
+    // Favorites: Should contain explicit favorites OR any subscribed assistants (in userAssistants but not created by user)
+    const isSubscribed = userAssistants.some(ua => ua.id === assistant.id) && assistant.createdBy !== 'user';
+    if (filter === 'favorites' && !favorites.includes(assistant.id) && !isSubscribed) return false;
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -242,7 +248,7 @@ export function AssistantDiscovery({
                   className={`group relative flex flex-col bg-card rounded-2xl border transition-all duration-300 cursor-pointer overflow-hidden ${selectedAssistant?.id === assistant.id
                     ? 'border-primary ring-1 ring-primary shadow-lg shadow-primary/10 scale-[1.02]'
                     : 'border-border/50 hover:border-primary/40 shadow-sm hover:shadow-lg hover:-translate-y-0.5'
-                    }`}
+                    } ${assistant.deletedByOwner ? 'opacity-70 grayscale-[0.2]' : ''}`}
                 >
                   {/* Gradient overlay on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -250,7 +256,7 @@ export function AssistantDiscovery({
                   {/* Card body */}
                   <div className="relative z-[1] p-5 pb-3 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:shadow-md transition-all duration-300 ${assistant.deletedByOwner ? 'grayscale' : ''}`}>
                         {assistant.icon}
                       </div>
                       <button
@@ -275,13 +281,27 @@ export function AssistantDiscovery({
 
                   {/* Footer */}
                   <div className="relative z-[1] px-5 py-3 border-t border-border/40 bg-muted/20">
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span className="flex items-center gap-1.5 font-medium" title="Subscribers">
+                    <div className="flex items-center text-[11px] text-muted-foreground relative min-h-[16px]">
+                      {/* Left: Subscribers */}
+                      <span className="flex items-center gap-1.5 font-medium absolute left-0" title="Subscribers">
                         <Users className="w-3.5 h-3.5 text-primary/60" />
                         {(assistant.subscriptionCount || 0).toLocaleString()}
                       </span>
+
+                      {/* Middle: Deleted Badge */}
+                      {assistant.deletedByOwner ? (
+                        <div className="flex-1 flex justify-center w-full">
+                          <span className="flex items-center gap-1.5 font-medium text-muted-foreground/80" title="Deleted by Owner">
+                            <Trash2 className="w-3 h-3" /> Deleted by owner
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex-1 w-full" />
+                      )}
+
+                      {/* Right: Version */}
                       {assistant.version && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 font-mono font-medium" title="Version">
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 font-mono font-medium absolute right-0" title="Version">
                           v{assistant.version}
                         </span>
                       )}
@@ -342,6 +362,11 @@ export function AssistantDiscovery({
                     {selectedAssistant.responseBehavior === 'creative' ? '🎨 Creative' :
                       selectedAssistant.responseBehavior === 'precise' ? '🎯 Precise' : '⚖️ Balanced'}
                   </span>
+                  {selectedAssistant.deletedByOwner && (
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border flex items-center gap-1">
+                      <Trash2 className="w-3 h-3" /> Deleted by owner
+                    </span>
+                  )}
                   {favorites.includes(selectedAssistant.id) && (
                     <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 flex items-center gap-1">
                       <Star className="w-3 h-3 fill-current" /> Favorite

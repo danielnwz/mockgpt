@@ -34,6 +34,7 @@ export interface Assistant {
   updatedAt?: string;
   subscriptionCount?: number;
   version?: string;
+  deletedByOwner?: boolean;
 }
 
 export interface Department {

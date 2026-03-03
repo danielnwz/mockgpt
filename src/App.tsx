@@ -10,7 +10,7 @@ import { Header } from './components/Header';
 import { VersionNotes } from './components/VersionNotes';
 import { SecureModeIntroModal } from './components/SecureModeIntroModal';
 import { Assistant, Chat, Message } from './types';
-import { getRecommendedAssistants, getCommunityAssistants } from './data/assistants';
+import { getRecommendedAssistants, getCommunityAssistants, getOwnedAssistants, getSubscribedAssistants } from './data/assistants';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version';
@@ -26,7 +26,15 @@ export default function App() {
 
   const [assistants, setAssistants] = useState<Assistant[]>(() => {
     const saved = localStorage.getItem('assistants');
-    return saved ? JSON.parse(saved) : [];
+    const mockAssistants = [...getOwnedAssistants(), ...getSubscribedAssistants()];
+
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const mockIds = new Set(mockAssistants.map(a => a.id));
+      const filteredParsed = parsed.filter((a: Assistant) => !mockIds.has(a.id));
+      return [...mockAssistants, ...filteredParsed];
+    }
+    return mockAssistants;
   });
   const [chats, setChats] = useState<Chat[]>(() => {
     const saved = localStorage.getItem('chats');
