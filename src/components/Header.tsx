@@ -32,14 +32,14 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
     <>
       <header className={`h-14 border-b flex items-center justify-between px-6 transition-colors duration-500 ${privateMode
         ? 'bg-primary text-primary-foreground border-primary'
-        : 'bg-card'
+        : 'bg-primary text-white border-primary dark:bg-[#4f7b72] dark:border-[#4f7b72]'
         }`}>
         <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${privateMode ? 'bg-white text-primary' : 'bg-primary'
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${privateMode ? 'bg-white text-primary' : 'bg-white/10 border border-white/20'
             }`}>
-            <Leaf className={`w-5 h-5 ${privateMode ? 'text-primary' : 'text-primary-foreground'}`} />
+            <Leaf className={`w-5 h-5 ${privateMode ? 'text-primary' : 'text-white'}`} />
           </div>
-          <h1 className={`type-section ${privateMode ? 'text-primary-foreground' : 'text-foreground'}`}>MUCGPT</h1>
+          <h1 className="type-section text-primary-foreground">MOCKGPT</h1>
 
           {privateMode ? (
             <div className="relative group/pill">
@@ -61,13 +61,13 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
             </div>
           ) : (
             <div className="relative group/pill">
-              <div className="flex items-center gap-1.5 ml-4 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/30 cursor-help">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 tracking-wide uppercase">No sensitive data</span>
+              <div className="flex items-center gap-1.5 ml-4 bg-amber-200 px-3 py-1 rounded-full border border-amber-100 shadow-sm cursor-help">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-900" />
+                <span className="text-xs font-semibold text-amber-900 tracking-wide uppercase">No sensitive data</span>
               </div>
-              <div className="absolute left-0 top-full mt-2 w-72 bg-card border border-amber-500/30 rounded-xl shadow-xl p-4 opacity-0 invisible group-hover/pill:opacity-100 group-hover/pill:visible transition-all duration-200 z-50">
+              <div className="absolute left-0 top-full mt-2 w-72 bg-card border border-border rounded-xl shadow-xl p-4 opacity-0 invisible group-hover/pill:opacity-100 group-hover/pill:visible transition-all duration-200 z-50">
                 <div className="flex items-start gap-3 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-semibold text-foreground">Open Mode — No Data Protection</p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -86,11 +86,11 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAbout(true)}
-            className={`group btn-ghost btn-sm ${privateMode ? 'text-white hover:bg-white/10' : ''}`}
+            className="group btn-ghost btn-sm text-white hover:bg-white/10"
             title="About MUCGPT"
           >
-            <BookOpen className={`w-5 h-5 ${privateMode ? 'text-white' : 'text-muted-foreground'}`} />
-            <span className={`max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[140px] ${privateMode ? 'text-white/90' : 'text-muted-foreground'}`}>
+            <BookOpen className="w-5 h-5 text-white" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[140px] text-white/90">
               About MUCGPT
             </span>
           </button>
@@ -99,11 +99,11 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
           <div className="relative">
             <button
               onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              className={`group btn-ghost btn-sm ${privateMode ? 'text-white hover:bg-white/10' : ''}`}
+              className="group btn-ghost btn-sm text-white hover:bg-white/10"
               title="Change language"
             >
-              <Globe className={`w-5 h-5 ${privateMode ? 'text-white' : 'text-muted-foreground'}`} />
-              <span className={`max-w-0 overflow-hidden whitespace-nowrap text-sm uppercase transition-all duration-200 group-hover:max-w-[60px] ${privateMode ? 'text-white/90' : 'text-muted-foreground'}`}>
+              <Globe className="w-5 h-5 text-white" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm uppercase transition-all duration-200 group-hover:max-w-[60px] text-white/90">
                 {language}
               </span>
             </button>
@@ -133,20 +133,20 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
 
           <button
             onClick={onToggleDarkMode}
-            className={`group btn-ghost btn-sm ${privateMode ? 'text-white hover:bg-white/10' : ''}`}
+            className="group btn-ghost btn-sm text-white hover:bg-white/10"
             title={darkMode ? t('lightMode') : t('darkMode')}
           >
             {darkMode ? (
               <>
-                <Moon className={`w-5 h-5 ${privateMode ? 'text-white' : 'text-muted-foreground'}`} />
-                <span className={`max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[60px] ${privateMode ? 'text-white/90' : 'text-muted-foreground'}`}>
+                <Moon className="w-5 h-5 text-white" />
+                <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[60px] text-white/90">
                   Dark
                 </span>
               </>
             ) : (
               <>
-                <Sun className={`w-5 h-5 ${privateMode ? 'text-white' : 'text-muted-foreground'}`} />
-                <span className={`max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[60px] ${privateMode ? 'text-white/90' : 'text-muted-foreground'}`}>
+                <Sun className="w-5 h-5 text-white" />
+                <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[60px] text-white/90">
                   Light
                 </span>
               </>
@@ -155,22 +155,22 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
 
           <button
             onClick={() => setShowFAQ(true)}
-            className={`group btn-ghost btn-sm ${privateMode ? 'text-white hover:bg-white/10' : ''}`}
+            className="group btn-ghost btn-sm text-white hover:bg-white/10"
             title={t('help')}
           >
-            <HelpCircle className={`w-5 h-5 ${privateMode ? 'text-white' : 'text-muted-foreground'}`} />
-            <span className={`max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[60px] ${privateMode ? 'text-white/90' : 'text-muted-foreground'}`}>
+            <HelpCircle className="w-5 h-5 text-white" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[60px] text-white/90">
               FAQ
             </span>
           </button>
 
           <button
             onClick={() => setShowFeedback(true)}
-            className={`group btn-ghost btn-sm ${privateMode ? 'text-white hover:bg-white/10' : ''}`}
+            className="group btn-ghost btn-sm text-white hover:bg-white/10"
             title={t('feedback')}
           >
-            <MessageSquare className={`w-5 h-5 ${privateMode ? 'text-white' : 'text-muted-foreground'}`} />
-            <span className={`max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[90px] ${privateMode ? 'text-white/90' : 'text-muted-foreground'}`}>
+            <MessageSquare className="w-5 h-5 text-white" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap text-sm transition-all duration-200 group-hover:max-w-[90px] text-white/90">
               Feedback
             </span>
           </button>

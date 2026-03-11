@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import { Send, Settings, ChevronDown, ShieldCheck, Globe, AlertTriangle, Info, MapPin } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { Send, Settings, ChevronDown, ShieldCheck, Globe, AlertTriangle, Info, MapPin, Maximize2, Minimize2, Copy, RotateCcw, Check, Ellipsis } from 'lucide-react';
 import { Chat, Assistant, ResponseBehavior } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 import { AssistantDetailsSidebar } from './AssistantDetailsSidebar';
+import { findLLMModelById, getAvailableLLMModels, getFallbackLLMModelId } from '../data/llmModels';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 
 interface ChatWindowProps {
   chat: Chat;
@@ -37,57 +39,7 @@ export function ChatWindow({
 }: ChatWindowProps) {
   const { t } = useTranslation();
 
-  const getLLMModels = () => {
-    const allModels = [
-      {
-        id: 'gpt-4', name: 'GPT-4 (Standard)', description: 'Most capable model for complex tasks and reasoning.',
-        publicOnly: true,
-        costInput: 0.03, costOutput: 0.06,
-        knowledgeCutoff: 'Apr 2024', provider: 'OpenAI', location: 'USA (Azure EU)',
-        maxInput: 128000,
-      },
-      {
-        id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'Fast and cost-effective model for everyday tasks.',
-        publicOnly: true,
-        costInput: 0.0005, costOutput: 0.0015,
-        knowledgeCutoff: 'Sep 2021', provider: 'OpenAI', location: 'USA (Azure EU)',
-        maxInput: 16385,
-      },
-      {
-        id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Strong performance on creative and open-ended tasks.',
-        publicOnly: true,
-        costInput: 0.015, costOutput: 0.075,
-        knowledgeCutoff: 'Aug 2024', provider: 'Anthropic', location: 'USA (AWS EU)',
-        maxInput: 200000,
-      },
-      {
-        id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', description: 'Balanced performance for enterprise workloads.',
-        publicOnly: true,
-        costInput: 0.003, costOutput: 0.015,
-        knowledgeCutoff: 'Aug 2024', provider: 'Anthropic', location: 'USA (AWS EU)',
-        maxInput: 200000,
-      },
-      {
-        id: 'llama-3-70b', name: 'MUC-GPT Secure', description: 'Hosted by IT-Referat. Certified for internal data (VS-NfD).',
-        privateAllowed: true,
-        costInput: 0, costOutput: 0,
-        knowledgeCutoff: 'Dec 2023', provider: 'LHM / IT-Referat', location: '🇩🇪 München (On-Premise)',
-        maxInput: 8192,
-      },
-      {
-        id: 'mistral-large', name: 'MUC-Mistral Large', description: 'High-performance model for German language tasks. Hosted on municipal servers.',
-        privateAllowed: true,
-        costInput: 0, costOutput: 0,
-        knowledgeCutoff: 'Nov 2023', provider: 'LHM / IT-Referat', location: '🇩🇪 München (On-Premise)',
-        maxInput: 32000,
-      },
-    ];
-
-    if (privateMode) {
-      return allModels.filter(m => m.privateAllowed);
-    }
-    return allModels;
-  };
+  const llmModels = useMemo(() => getAvailableLLMModels(privateMode), [privateMode]);
 
   const getResponseBehaviors = (): { value: ResponseBehavior; label: string; description: string }[] => [
     { value: 'precise', label: t('precise'), description: t('preciseDescription') },
@@ -99,14 +51,24 @@ export function ChatWindow({
   const [showModelDetails, setShowModelDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAssistantDetails, setShowAssistantDetails] = useState(false);
-  const [selectedLLM, setSelectedLLM] = useState(chat.llmModel || 'gpt-4');
+  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
+  const [selectedLLM, setSelectedLLM] = useState(
+    chat.llmModel || assistant?.defaultLlmModel || getFallbackLLMModelId(privateMode)
+  );
   const [chatResponseBehavior, setChatResponseBehavior] = useState<ResponseBehavior>(
     chat.responseBehavior || assistant?.responseBehavior || 'balanced'
   );
   const [chatSystemPrompt, setChatSystemPrompt] = useState(
     chat.systemPrompt || assistant?.systemPrompt || 'You are a helpful AI assistant.'
   );
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const rewriteQuickPrompts = [
+    { value: 'shorter', label: t('rewriteShorter') },
+    { value: 'formal', label: t('rewriteFormal') },
+    { value: 'informal', label: t('rewriteInformal') },
+    { value: 'longer', label: t('rewriteLonger') },
+  ];
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -115,6 +77,19 @@ export function ChatWindow({
   useEffect(() => {
     scrollToBottom();
   }, [chat.messages]);
+
+  useEffect(() => {
+    const preferredModel = chat.llmModel || assistant?.defaultLlmModel || getFallbackLLMModelId(privateMode);
+    const nextModel = llmModels.some((model) => model.id === preferredModel)
+      ? preferredModel
+      : getFallbackLLMModelId(privateMode);
+
+    setSelectedLLM(nextModel);
+
+    if (onUpdateChat && chat.llmModel !== nextModel) {
+      onUpdateChat({ ...chat, llmModel: nextModel });
+    }
+  }, [assistant?.defaultLlmModel, chat, chat.llmModel, llmModels, onUpdateChat, privateMode]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +101,7 @@ export function ChatWindow({
 
   const handleLLMChange = (modelId: string) => {
     // Check if the selected model is consistent with the current mode
-    const selectedModel = getLLMModels().find(m => m.id === modelId);
+    const selectedModel = findLLMModelById(modelId);
 
     // If selecting a private-allowed model (and we are NOT in private mode), switch to private mode
     if (selectedModel?.privateAllowed && !privateMode && onEnableSecureMode) {
@@ -151,7 +126,56 @@ export function ChatWindow({
     setShowSettings(false);
   };
 
+  const handleComposerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim()) {
+        onSendMessage(input.trim());
+        setInput('');
+      }
+    }
+  };
+
   const isOwner = assistant && (userAssistants?.some(a => a.id === assistant.id) || assistant.createdBy === 'user');
+  const hasExamplePrompts = Boolean(assistant?.examplePrompts?.length);
+  const handleStartWithExample = (prompt: string) => {
+    onSendMessage(prompt);
+    setInput('');
+  };
+
+  const handleQuickFollowUp = (prompt: string) => {
+    onSendMessage(prompt);
+    setInput('');
+  };
+
+  const handleCopyMessage = async (messageId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageId(messageId);
+      window.setTimeout(() => {
+        setCopiedMessageId((current) => (current === messageId ? null : current));
+      }, 1600);
+    } catch {
+      // Clipboard can be unavailable in some browser contexts.
+      setCopiedMessageId(null);
+    }
+  };
+
+  const getPreviousUserPrompt = (messageIndex: number) => {
+    for (let i = messageIndex - 1; i >= 0; i -= 1) {
+      if (chat.messages[i].role === 'user') {
+        return chat.messages[i].content;
+      }
+    }
+    return null;
+  };
+
+  const handleRegenerate = (messageIndex: number) => {
+    const previousUserPrompt = getPreviousUserPrompt(messageIndex);
+    if (!previousUserPrompt) return;
+    onSendMessage(previousUserPrompt);
+    setInput('');
+  };
 
   return (
     <div className="h-full flex overflow-hidden">
@@ -182,7 +206,7 @@ export function ChatWindow({
                   title={t('selectAIModel')}
                 >
                   {privateMode && <ShieldCheck className="w-4 h-4" />}
-                  {getLLMModels().find(m => m.id === selectedLLM)?.name || (privateMode ? 'MUC-GPT Secure' : 'GPT-4 (Standard)')}
+                  {llmModels.find(m => m.id === selectedLLM)?.name || (privateMode ? 'MUC-GPT Secure' : 'GPT-4 (Standard)')}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 {showLLMMenu && (
@@ -203,7 +227,7 @@ export function ChatWindow({
                         </button>
                       </div>
                       <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
-                        {getLLMModels().map((model) => (
+                        {llmModels.map((model) => (
                           <button
                             key={model.id}
                             onClick={() => handleLLMChange(model.id)}
@@ -297,7 +321,7 @@ export function ChatWindow({
                   className="flex items-center gap-2 px-4 py-2 text-sm bg-secondary/40 text-secondary-foreground rounded-lg hover:bg-secondary/60 transition-colors border border-border font-medium"
                   title={t('selectAIModel')}
                 >
-                  {getLLMModels().find(m => m.id === selectedLLM)?.name}
+                  {llmModels.find(m => m.id === selectedLLM)?.name || (privateMode ? 'MUC-GPT Secure' : 'GPT-4 (Standard)')}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 {showLLMMenu && (
@@ -318,7 +342,7 @@ export function ChatWindow({
                         </button>
                       </div>
                       <div className="max-h-[400px] overflow-y-auto thin-scrollbar">
-                        {getLLMModels().map((model) => (
+                        {llmModels.map((model) => (
                           <button
                             key={model.id}
                             onClick={() => handleLLMChange(model.id)}
@@ -470,22 +494,20 @@ export function ChatWindow({
                       {assistant.name}
                     </h2>
                     <p className="text-sm text-muted-foreground/70 mt-1 animate-fade-up" style={{ animationDelay: '120ms' }}>
-                      Try a quick prompt below or start typing.
+                      {hasExamplePrompts ? 'Choose an example to start or type your own message.' : 'Start typing to begin.'}
                     </p>
 
-                    {/* Quick Prompts */}
-                    {assistant.quickPrompts && assistant.quickPrompts.length > 0 && (
+                    {/* Example Prompts */}
+                    {assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
                       <div className="mt-6 w-full max-w-2xl">
                         <div className="text-center space-y-2 mb-4">
-                          <h3 className="text-lg font-semibold text-foreground">Pick one to start</h3>
+                          <h3 className="text-lg font-semibold text-foreground">Example Messages</h3>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          {assistant.quickPrompts.map((prompt, index) => (
+                          {assistant.examplePrompts.map((prompt, index) => (
                             <button
                               key={index}
-                              onClick={() => {
-                                setInput(prompt);
-                              }}
+                              onClick={() => handleStartWithExample(prompt)}
                               className="group rounded-2xl border bg-primary/10 px-5 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md animate-fade-up"
                               style={{ animationDelay: `${index * 60}ms` }}
                             >
@@ -513,76 +535,142 @@ export function ChatWindow({
             </div>
           )}
 
-          {chat.messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-            >
-              {message.role === 'assistant' && assistant && (
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-lg">
-                  {assistant.icon}
-                </div>
-              )}
-              {message.role === 'assistant' && !assistant && (
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xl shadow-md">
-                  🤖
-                </div>
-              )}
+          {chat.messages.map((message, index) => {
+            const isAssistant = message.role === 'assistant';
+            const previousUserPrompt = getPreviousUserPrompt(index);
+            const canRegenerate = Boolean(previousUserPrompt);
+            const isLatestAssistant = isAssistant && index === chat.messages.length - 1;
+
+            return (
               <div
-                className={`max-w-2xl rounded-2xl px-5 py-3 ${message.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-secondary-foreground'
+                key={message.id}
+                className={`group flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'
                   }`}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                {message.role === 'assistant' && assistant && (
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-lg">
+                    {assistant.icon}
+                  </div>
+                )}
+                {message.role === 'assistant' && !assistant && (
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xl shadow-md">
+                    🤖
+                  </div>
+                )}
                 <div
-                  className={`text-xs mt-2 ${message.role === 'user' ? 'opacity-80' : 'text-muted-foreground'
+                  className={`max-w-2xl rounded-2xl px-5 py-3 relative ${message.role === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary/90 border border-border/45 text-secondary-foreground shadow-sm backdrop-blur-sm'
                     }`}
                 >
-                  {new Date(message.timestamp).toLocaleTimeString()}
+                  {isAssistant && (
+                    <div className="absolute right-2 top-2 z-20 flex items-center gap-1 group/actions">
+                      <div className="relative flex items-center gap-1 rounded-md border border-border/55 bg-background px-1 py-1 shadow-md opacity-0 translate-x-1 pointer-events-none transition-all group-hover/actions:opacity-100 group-hover/actions:translate-x-0 group-hover/actions:pointer-events-auto focus-within:opacity-100 focus-within:translate-x-0 focus-within:pointer-events-auto">
+                        <button
+                          onClick={() => handleCopyMessage(message.id, message.content)}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                          title={t('copyMessage')}
+                        >
+                          {copiedMessageId === message.id ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          onClick={() => handleRegenerate(index)}
+                          disabled={!canRegenerate}
+                          className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                          title={t('regenerate')}
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/45 bg-background/85 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"
+                            title="More actions"
+                          >
+                            <Ellipsis className="w-3.5 h-3.5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={6} className="w-44">
+                          <DropdownMenuLabel className="text-xs">{t('messageActions')}</DropdownMenuLabel>
+                          <DropdownMenuItem onSelect={() => handleCopyMessage(message.id, message.content)}>
+                            <Copy className="w-3.5 h-3.5" />
+                            {t('copyMessage')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => handleRegenerate(index)} disabled={!canRegenerate}>
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            {t('regenerate')}
+                          </DropdownMenuItem>
+                          {isLatestAssistant && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuLabel className="text-xs">{t('quickRewrite')}</DropdownMenuLabel>
+                              {rewriteQuickPrompts.map((prompt) => (
+                                <DropdownMenuItem key={`${message.id}-${prompt.value}`} onSelect={() => handleQuickFollowUp(prompt.label)}>
+                                  {prompt.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
+                  <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
+                {message.role === 'user' && (
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/90 to-primary flex items-center justify-center text-primary-foreground text-xl shadow-md">
+                    👤
+                  </div>
+                )}
               </div>
-              {message.role === 'user' && (
-                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/90 to-primary flex items-center justify-center text-primary-foreground text-xl shadow-md">
-                  👤
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
         <div className="p-6">
-          <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl gap-3">
+          <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl items-start gap-3">
             <div className="flex-1 relative">
-              <input
-                type="text"
+              <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleComposerKeyDown}
                 placeholder={privateMode
                   ? (t('typeSecureMessage') || "Type a secure message...")
                   : (t('typeStandardMessage') || "Type a message...")
                 }
-                className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground shadow-sm transition-all ${privateMode
-                  ? 'border-primary/50 focus:ring-primary pr-36 pl-10'
-                  : 'border-border pr-36 pl-10'
-                  }`}
+                rows={isComposerExpanded ? 6 : 1}
+                style={{ resize: 'none' }}
+                className={`w-full rounded-xl border focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground shadow-sm transition-all duration-200 resize-none leading-relaxed ${privateMode
+                  ? 'border-primary/50 focus:ring-primary'
+                  : 'border-border'
+                  } ${isComposerExpanded ? 'min-h-[180px] pl-10 pr-36 py-3.5 overflow-y-auto' : 'min-h-[56px] pl-10 pr-36 py-2.5 overflow-hidden'}`}
               />
+              <button
+                type="button"
+                onClick={() => setIsComposerExpanded((prev) => !prev)}
+                className={`absolute right-2 top-2 h-4 w-4 rounded-sm transition-colors flex items-center justify-center z-10 ${privateMode
+                  ? 'bg-primary/15 text-primary hover:bg-primary/25'
+                  : 'bg-muted/85 text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                title={isComposerExpanded ? 'Collapse input' : 'Expand input'}
+              >
+                {isComposerExpanded ? <Minimize2 className="w-2.5 h-2.5" /> : <Maximize2 className="w-2.5 h-2.5" />}
+              </button>
 
               {privateMode ? (
                 <>
-                  <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-pulse" />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 select-none">
+                  <ShieldCheck className={`absolute left-3 w-5 h-5 text-primary animate-pulse ${isComposerExpanded ? 'top-3.5' : 'top-1/2 -translate-y-1/2'}`} />
+                  <div className={`absolute right-12 flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-lg border border-primary/20 select-none ${isComposerExpanded ? 'bottom-2' : 'top-1/2 -translate-y-1/2'}`}>
                     <ShieldCheck className="w-3.5 h-3.5" />
                     <span className="text-xs font-semibold whitespace-nowrap">Secure Mode</span>
                   </div>
                 </>
               ) : (
                 <>
-                  <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 select-none">
+                  <Globe className={`absolute left-3 w-5 h-5 text-muted-foreground ${isComposerExpanded ? 'top-3.5' : 'top-1/2 -translate-y-1/2'}`} />
+                  <div className={`absolute right-12 flex items-center gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 select-none ${isComposerExpanded ? 'bottom-2' : 'top-1/2 -translate-y-1/2'}`}>
                     <AlertTriangle className="w-3.5 h-3.5" />
                     <span className="text-xs font-semibold whitespace-nowrap">No sensitive data</span>
                   </div>
@@ -592,7 +680,7 @@ export function ChatWindow({
             <button
               type="submit"
               disabled={!input.trim()}
-              className="btn-primary btn-lg disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              className="btn-primary h-[56px] px-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
             >
               <Send className="w-5 h-5" />
               <span>{t('send')}</span>
@@ -626,3 +714,5 @@ export function ChatWindow({
     </div>
   );
 }
+
+

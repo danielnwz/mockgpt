@@ -1,5 +1,6 @@
 import { ArrowLeft, MessageSquare, Edit, Trash2, Zap, Info, Star, Sparkles, Download, Copy } from 'lucide-react';
 import { Assistant } from '../types';
+import { findLLMModelById } from '../data/llmModels';
 
 interface AssistantDetailsPageProps {
     assistant: Assistant;
@@ -22,7 +23,9 @@ export const exportAssistantData = (assistant: Assistant) => {
         responseBehavior: assistant.responseBehavior,
         allowedTools: assistant.allowedTools,
         publishedDepartments: assistant.publishedDepartments,
+        examplePrompts: assistant.examplePrompts,
         quickPrompts: assistant.quickPrompts,
+        defaultLlmModel: assistant.defaultLlmModel,
     };
 
     const dataStr = JSON.stringify(assistantData, null, 2);
@@ -69,6 +72,7 @@ export function AssistantDetailsPage({
     isUserAssistant,
     onDuplicateAssistant
 }: AssistantDetailsPageProps) {
+    const defaultLlmModelName = findLLMModelById(assistant.defaultLlmModel)?.name || assistant.defaultLlmModel;
 
     const handleExport = () => {
         exportAssistantData(assistant);
@@ -198,6 +202,19 @@ export function AssistantDetailsPage({
                                 </div>
                             </div>
                         )}
+
+                        {assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
+                            <div className="bg-card rounded-xl border p-6 shadow-sm">
+                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">Example Messages</h3>
+                                <div className="space-y-3">
+                                    {assistant.examplePrompts.map((prompt, i) => (
+                                        <div key={i} className="p-3 rounded-lg bg-background border border-border/60 text-sm text-foreground italic hover:border-primary/40 transition-colors">
+                                            "{prompt}"
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Column: System Prompt (Wide) */}
@@ -226,6 +243,11 @@ export function AssistantDetailsPage({
                                     It has access to specific tools tailored for its role.
                                     Start a chat to see it in action.
                                 </p>
+                                {defaultLlmModelName && (
+                                    <p className="text-xs text-blue-700 dark:text-blue-300 mt-3">
+                                        Default model: <strong>{defaultLlmModelName}</strong>
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

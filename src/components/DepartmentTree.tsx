@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronRight, ChevronDown, Check, Search } from 'lucide-react';
+import { ChevronRight, ChevronDown, Search } from 'lucide-react';
 import { Department } from '../types';
 
 interface DepartmentTreeProps {
@@ -26,6 +26,75 @@ export function DepartmentTree({
 
   const isSelected = (id: string) => selectedDepartments.includes(id);
 
+  const getSubtreeIds = (dept: Department): string[] => {
+    const ids = [dept.id];
+    if (dept.children && dept.children.length > 0) {
+      dept.children.forEach((child) => {
+        ids.push(...getSubtreeIds(child));
+      });
+    }
+    return ids;
+  };
+
+  const normalizeSelection = (ids: string[]): string[] => {
+    const selected = new Set(ids);
+
+    const walk = (dept: Department): boolean => {
+      const hasChildren = dept.children && dept.children.length > 0;
+      if (!hasChildren) {
+        return selected.has(dept.id);
+      }
+
+      const allChildrenSelected = dept.children!.every((child) => walk(child));
+      if (allChildrenSelected) {
+        selected.add(dept.id);
+      } else {
+        selected.delete(dept.id);
+      }
+
+      return selected.has(dept.id);
+    };
+
+    departments.forEach((dept) => walk(dept));
+    return Array.from(selected);
+  };
+
+  const updateSelection = (ids: string[]) => {
+    const normalized = normalizeSelection(ids);
+    if (onSelectionChange) {
+      onSelectionChange(normalized);
+      return;
+    }
+    // Fallback for older parent integrations.
+    const current = new Set(selectedDepartments);
+    const next = new Set(normalized);
+    const changed = Array.from(new Set([...current, ...next])).filter(
+      (id) => current.has(id) !== next.has(id)
+    );
+    changed.forEach((id) => onToggleDepartment(id));
+  };
+
+  const handleDepartmentToggle = (dept: Department) => {
+    const hasChildren = dept.children && dept.children.length > 0;
+    const currentlySelected = isSelected(dept.id);
+
+    if (!hasChildren) {
+      const next = currentlySelected
+        ? selectedDepartments.filter((id) => id !== dept.id)
+        : [...selectedDepartments, dept.id];
+      updateSelection(next);
+      return;
+    }
+
+    const fullDept = departmentIndex.get(dept.id) ?? dept;
+    const subtreeIds = getSubtreeIds(fullDept);
+    if (currentlySelected) {
+      updateSelection(selectedDepartments.filter((id) => !subtreeIds.includes(id)));
+    } else {
+      updateSelection(Array.from(new Set([...selectedDepartments, ...subtreeIds])));
+    }
+  };
+
   // Filter logic: if a department matches OR has matching children
   const filterDepartments = (depts: Department[], query: string): Department[] => {
     if (!query) return depts;
@@ -50,6 +119,20 @@ export function DepartmentTree({
     [departments, searchQuery]
   );
 
+  const departmentIndex = useMemo(() => {
+    const index = new Map<string, Department>();
+    const walk = (depts: Department[]) => {
+      depts.forEach((dept) => {
+        index.set(dept.id, dept);
+        if (dept.children && dept.children.length > 0) {
+          walk(dept.children);
+        }
+      });
+    };
+    walk(departments);
+    return index;
+  }, [departments]);
+
   // Auto-expand if searching
   const displayedDepartments = searchQuery ? filteredDepartments : departments;
   // If searching, we act as if everything matching is expanded so users can see results inside folders
@@ -64,13 +147,14 @@ export function DepartmentTree({
     return (
       <div key={dept.id}>
         <div
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer`}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors`}
           style={{ paddingLeft: `${level * 1.5 + 0.75}rem` }}
         >
-          {hasChildren && (
+          {hasChildren ? (
             <button
               onClick={() => toggleExpanded(dept.id)}
               className="p-0.5 hover:bg-secondary rounded"
+              aria-label={isExpanded ? `Collapse ${dept.name}` : `Expand ${dept.name}`}
             >
               {isExpanded ? (
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -78,19 +162,50 @@ export function DepartmentTree({
                 <ChevronRight className="w-4 h-4 text-muted-foreground" />
               )}
             </button>
+          ) : (
+            <div className="w-5" />
           )}
-          {!hasChildren && <div className="w-5" />}
 
-          <button
-            onClick={() => onToggleDepartment(dept.id)}
-            className={`flex-1 flex items-center justify-between text-left py-1 px-2 rounded transition-colors ${selected
-              ? 'bg-primary/20 text-primary'
-              : 'text-foreground'
-              }`}
-          >
-            <span className="text-sm truncate" title={dept.name}>{dept.name}</span>
-            {selected && <Check className="w-4 h-4 flex-shrink-0" />}
-          </button>
+          {hasChildren ? (
+            <>
+              <button
+                onClick={() => toggleExpanded(dept.id)}
+                className="flex-1 text-left py-1 px-2 rounded text-foreground hover:bg-secondary/40 transition-colors"
+                aria-expanded={isExpanded}
+              >
+                <span className="text-sm truncate" title={dept.name}>{dept.name}</span>
+              </button>
+              <input
+                type="checkbox"
+                checked={selected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => handleDepartmentToggle(dept)}
+                className="h-4 w-4 accent-primary cursor-pointer"
+                aria-label={`Select ${dept.name}`}
+              />
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => handleDepartmentToggle(dept)}
+                className={`flex-1 text-left text-sm truncate py-1 px-2 rounded transition-colors ${selected
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-foreground hover:bg-secondary/40'
+                  }`}
+                title={dept.name}
+              >
+                {dept.name}
+              </button>
+              <input
+                type="checkbox"
+                checked={selected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => handleDepartmentToggle(dept)}
+                className="h-4 w-4 accent-primary cursor-pointer"
+                aria-label={`Select ${dept.name}`}
+              />
+            </>
+          )}
         </div>
 
         {hasChildren && isExpanded && (
@@ -105,36 +220,25 @@ export function DepartmentTree({
   // Helper to get all IDs recursively
   const getAllIds = (depts: Department[]): string[] => {
     return depts.reduce((acc: string[], dept) => {
-      acc.push(dept.id);
-      if (dept.children) {
-        acc.push(...getAllIds(dept.children));
+      if (dept.children && dept.children.length > 0) {
+        acc.push(dept.id, ...getAllIds(dept.children));
+      } else {
+        acc.push(dept.id);
       }
       return acc;
     }, []);
   };
 
   const handleSelectAll = () => {
-    // If we are filtering, only select the filtered ones
+    // If we are filtering, only select the visible filtered departments
     const idsToSelect = getAllIds(displayedDepartments);
     // Merge with existing, avoiding duplicates
     const newSelected = Array.from(new Set([...selectedDepartments, ...idsToSelect]));
-
-    // We can't batch update via onToggleDepartment parent prop easily if it expects single ID (usually). 
-    // Wait, the parent `onToggleDepartment` usually toggles ONE. 
-    // We need a new prop `onSelectAll` or change the interface to `onSelectionChange`.
-    // Since I can't change the interface without breaking parent usage (though I will change parent next), 
-    // I should probably temporarily accept that I need to update the parent interface.
-    // However, looking at the tools available, I can modify the parent `AssistantEditor` in the next step.
-    // For now, let's assume I'll update the prop in this file and I will fix the parent in the next step.
-    if (onSelectionChange) {
-      onSelectionChange(newSelected);
-    }
+    updateSelection(newSelected);
   };
 
   const handleDeselectAll = () => {
-    if (onSelectionChange) {
-      onSelectionChange([]);
-    }
+    updateSelection([]);
   };
 
   return (

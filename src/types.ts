@@ -30,7 +30,9 @@ export interface Assistant {
   createdBy: string;
   isPublic: boolean;
   publishedDepartments?: string[];
+  examplePrompts?: string[];
   quickPrompts?: string[];
+  defaultLlmModel?: string;
   updatedAt?: string;
   subscriptionCount?: number;
   version?: string;

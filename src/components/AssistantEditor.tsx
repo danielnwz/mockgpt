@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Sparkles, Download, Plus, Trash2, Code2, Search, Globe, ImagePlus, FileUp, BarChart3, Target, Zap, Palette, User, Settings, Wrench, ChevronDown, Users, Info, ArrowLeft, Bot, PenTool, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { X, Save, Sparkles, Plus, Trash2, Code2, Search, Globe, ImagePlus, FileUp, BarChart3, Target, Zap, Palette, User, Settings, Wrench, ChevronDown, Users, Info, ArrowLeft, ArrowRight, Bot, PenTool, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Assistant, ResponseBehavior } from '../types';
 import { ChatPreview } from './ChatPreview';
 import { DepartmentTree } from './DepartmentTree';
 import { departments } from '../data/departments';
-import { exportAssistantData } from './AssistantDetailsPage';
+import { getAllLLMModels, getFallbackLLMModelId } from '../data/llmModels';
 
 interface AssistantEditorProps {
   assistant: Assistant | null;
@@ -28,6 +28,9 @@ const RESPONSE_BEHAVIORS: { value: ResponseBehavior; label: string; description:
   { value: 'balanced', label: 'Balanced', description: 'A good mix of accuracy and creativity', icon: Zap },
   { value: 'creative', label: 'Creative', description: 'More varied and imaginative responses', icon: Palette },
 ];
+
+const ALL_LLM_MODELS = getAllLLMModels();
+const DEFAULT_LLM_MODEL = getFallbackLLMModelId(false);
 
 type CreationStep = 'initial' | 'ai-input' | 'form';
 
@@ -55,11 +58,18 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>(
     assistant?.publishedDepartments || []
   );
+  const [defaultLlmModel, setDefaultLlmModel] = useState(
+    assistant?.defaultLlmModel || DEFAULT_LLM_MODEL
+  );
+  const [examplePrompts, setExamplePrompts] = useState<string[]>(
+    assistant?.examplePrompts || []
+  );
+  const [newExamplePrompt, setNewExamplePrompt] = useState('');
   const [quickPrompts, setQuickPrompts] = useState<string[]>(
     assistant?.quickPrompts || []
   );
   const [newQuickPrompt, setNewQuickPrompt] = useState('');
-  const [draggedPromptIndex, setDraggedPromptIndex] = useState<number | null>(null);
+  const [draggedQuickPromptIndex, setDraggedQuickPromptIndex] = useState<number | null>(null);
   const [openSections, setOpenSections] = useState({
     basic: true,
     behavior: true,
@@ -80,6 +90,8 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       setResponseBehavior(assistant.responseBehavior);
       setAllowedTools(assistant.allowedTools);
       setSelectedDepartments(assistant.publishedDepartments || []);
+      setDefaultLlmModel(assistant.defaultLlmModel || DEFAULT_LLM_MODEL);
+      setExamplePrompts(assistant.examplePrompts || []);
       setQuickPrompts(assistant.quickPrompts || []);
     } else {
       // If we are creating new, we might be in the middle of a flow, so don't reset unless explicitly navigating
@@ -146,25 +158,25 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     setSelectedDepartments(ids);
   };
 
-  const handleDragStart = (index: number) => {
-    setDraggedPromptIndex(index);
+  const handleQuickPromptDragStart = (index: number) => {
+    setDraggedQuickPromptIndex(index);
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleQuickPromptDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    if (draggedPromptIndex === null || draggedPromptIndex === index) return;
+    if (draggedQuickPromptIndex === null || draggedQuickPromptIndex === index) return;
 
     const newPrompts = [...quickPrompts];
-    const draggedItem = newPrompts[draggedPromptIndex];
-    newPrompts.splice(draggedPromptIndex, 1);
+    const draggedItem = newPrompts[draggedQuickPromptIndex];
+    newPrompts.splice(draggedQuickPromptIndex, 1);
     newPrompts.splice(index, 0, draggedItem);
 
     setQuickPrompts(newPrompts);
-    setDraggedPromptIndex(index);
+    setDraggedQuickPromptIndex(index);
   };
 
-  const handleDragEnd = () => {
-    setDraggedPromptIndex(null);
+  const handleQuickPromptDragEnd = () => {
+    setDraggedQuickPromptIndex(null);
   };
 
   const handleSave = () => {
@@ -172,6 +184,9 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       alert('Please fill in all required fields');
       return;
     }
+
+    const sanitizedExamplePrompts = examplePrompts.map((prompt) => prompt.trim()).filter(Boolean);
+    const sanitizedQuickPrompts = quickPrompts.map((prompt) => prompt.trim()).filter(Boolean);
 
     const assistantData = {
       name: name.trim(),
@@ -181,7 +196,9 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       responseBehavior,
       allowedTools,
       publishedDepartments: selectedDepartments,
-      quickPrompts,
+      examplePrompts: sanitizedExamplePrompts,
+      quickPrompts: sanitizedQuickPrompts,
+      defaultLlmModel,
       // If departments are selected, we consider it "published" or "shared".
       // If no departments, it stays private (unless it was already public? Logic here depends on requirements).
       // Let's assume selecting departments makes it public to those departments.
@@ -195,29 +212,6 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     }
   };
 
-  const handleExport = () => {
-    if (!name.trim() || !description.trim()) {
-      alert('Cannot export an incomplete assistant.');
-      return;
-    }
-
-    const assistantData = {
-      id: assistant?.id || 'new-assistant',
-      name: name.trim(),
-      description: description.trim(),
-      icon,
-      systemPrompt: systemPrompt.trim(),
-      responseBehavior,
-      allowedTools,
-      publishedDepartments: selectedDepartments,
-      quickPrompts,
-      createdBy: assistant?.createdBy || 'user',
-      isPublic: assistant?.isPublic || false,
-    } as Assistant;
-
-    exportAssistantData(assistantData);
-  };
-
   const previewAssistant: Assistant = {
     id: 'preview',
     name,
@@ -226,6 +220,8 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     systemPrompt,
     responseBehavior,
     allowedTools,
+    defaultLlmModel,
+    examplePrompts,
     quickPrompts,
     createdBy: 'user',
     isPublic: false,
@@ -241,13 +237,21 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
   return (
     <div className="h-full flex overflow-hidden bg-card">
       {/* Settings Panel (Left Side) - Slide In */}
-      <div className={`${creationStep === 'form' && isPreviewCollapsed ? 'w-full' : 'w-1/2'} border-r overflow-y-auto bg-card thin-scrollbar animate-in slide-in-from-left-20 duration-500 ease-out transition-[width] duration-500 flex flex-col`}>
+      <div className={`${creationStep === 'initial' || creationStep === 'ai-input'
+        ? 'w-full border-r-0'
+        : creationStep === 'form' && isPreviewCollapsed
+          ? 'w-full'
+          : 'w-1/2 border-r'
+        } overflow-y-auto bg-card thin-scrollbar animate-in slide-in-from-left-20 duration-500 ease-out transition-[width] duration-500 flex flex-col`}>
 
         {/* Step: Initial Choice */}
         {creationStep === 'initial' && (
           <div className="px-10 py-12 flex flex-col min-h-full">
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold tracking-tight text-foreground">Create Assistant</h2>
+              <div>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground">Create Assistant</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Choose how you want to start.</p>
+              </div>
               <button
                 onClick={onCancel}
                 className="p-2 hover:bg-accent rounded-lg transition-colors"
@@ -256,39 +260,49 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <div className="w-full max-w-lg space-y-4">
+            <div className="flex-1 flex items-center justify-center">
+              <div className="relative w-full max-w-2xl">
+                <div className="pointer-events-none absolute left-10 right-10 -top-10 h-40 rounded-full bg-primary/12 blur-3xl" />
+                <div className="relative rounded-3xl border border-border/60 bg-card/70 backdrop-blur-sm p-5 sm:p-6 shadow-sm">
+                  <div className="space-y-4">
                 <button
                   onClick={() => setCreationStep('form')}
-                  className="w-full group relative p-6 bg-card border-2 border-border rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 text-left flex items-start gap-4"
+                  className="w-full group relative p-6 pr-16 bg-card border-2 border-border/80 rounded-2xl hover:border-primary/45 hover:shadow-md transition-all duration-300 text-left flex items-start gap-4 hover:-translate-y-0.5"
                 >
                   <div className="mt-1 w-10 h-10 rounded-lg bg-secondary flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
                     <PenTool className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-lg font-bold mb-1">Create Manually</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Start from scratch. Define tools, behavior, and prompts yourself.
                     </p>
+                    <p className="mt-2 text-xs font-medium text-foreground/75">Best for full control from the start</p>
                   </div>
+                  <ArrowRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </button>
 
                 <button
                   onClick={() => setCreationStep('ai-input')}
-                  className="w-full group relative p-6 bg-gradient-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-xl hover:border-primary hover:shadow-md hover:shadow-primary/10 transition-all duration-300 text-left flex items-start gap-4"
+                  className="w-full group relative p-6 pr-24 bg-gradient-to-br from-primary/12 via-primary/8 to-card border-2 border-primary/30 rounded-2xl hover:border-primary/60 hover:shadow-md hover:shadow-primary/15 transition-all duration-300 text-left flex items-start gap-4 hover:-translate-y-0.5"
                 >
+                  <span className="absolute top-4 right-14 inline-flex items-center rounded-md bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-semibold shadow-sm">
+                    Recommended
+                  </span>
                   <div className="mt-1 w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300">
                     <Bot className="w-5 h-5" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-bold">Generate with AI</h3>
-                    </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold mb-1">Generate with AI</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       Describe your needs and let AI generate the configuration.
                     </p>
+                    <p className="mt-2 text-xs font-medium text-foreground/75">Best for a fast first draft you can refine</p>
                   </div>
+                  <ArrowRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/80 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -297,17 +311,29 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
         {/* Step: AI Input */}
         {creationStep === 'ai-input' && (
           <div className="px-10 py-12 flex flex-col min-h-full">
-            <div className="flex items-center gap-2 mb-8">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-start gap-3">
+                <button
+                  onClick={() => setCreationStep('initial')}
+                  className="btn-ghost btn-sm mt-1 text-muted-foreground hover:text-foreground"
+                  title="Back to mode selection"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                <h2 className="text-3xl font-bold tracking-tight text-foreground">Create Assistant</h2>
+                <p className="mt-2 text-sm text-muted-foreground">Describe your assistant and generate a first draft.</p>
+                </div>
+              </div>
               <button
-                onClick={() => setCreationStep('initial')}
-                className="p-2 -ml-2 hover:bg-accent rounded-full text-muted-foreground hover:text-foreground transition-colors"
+                onClick={onCancel}
+                className="p-2 hover:bg-accent rounded-lg transition-colors"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <X className="w-6 h-6 text-muted-foreground" />
               </button>
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">Describe Assistant</h2>
             </div>
 
-            <div className="flex-1 flex flex-col gap-6">
+            <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6">
               <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
                 <div className="flex gap-3 mb-2">
                   <Sparkles className="w-5 h-5 text-primary" />
@@ -408,9 +434,9 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
               </div>
             </div>
 
-            <div className={`${isPreviewCollapsed ? 'grid grid-cols-2 gap-6' : 'space-y-6'}`}>
+            <div className={`${isPreviewCollapsed ? "space-y-0 after:block after:clear-both after:content-['']" : 'space-y-6'}`}>
               {/* Basic Information Section */}
-              <div className="relative surface-card">
+              <div className={`${isPreviewCollapsed ? 'float-left clear-left w-[calc(50%-1rem)] mb-8' : ''} relative surface-card`}>
                 <button
                   type="button"
                   onClick={() => toggleSection('basic')}
@@ -492,7 +518,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
               </div>
 
               {/* Behavior & Configuration Section */}
-              <div className="relative surface-card">
+              <div className={`${isPreviewCollapsed ? 'float-right clear-right w-[calc(50%-1rem)] mb-8' : ''} relative surface-card`}>
                 <button
                   type="button"
                   onClick={() => toggleSection('behavior')}
@@ -565,11 +591,32 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                     </div>
                   </div>
 
+                  {/* Default LLM Model */}
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">
+                      Default LLM Model
+                    </label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Used automatically when a new chat starts with this assistant.
+                    </p>
+                    <select
+                      value={defaultLlmModel}
+                      onChange={(e) => setDefaultLlmModel(e.target.value)}
+                      className="w-full px-4 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
+                    >
+                      {ALL_LLM_MODELS.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                 </div>
               </div>
 
               {/* Tools & Features Section */}
-              <div className="relative surface-card">
+              <div className={`${isPreviewCollapsed ? 'float-left clear-left w-[calc(50%-1rem)] mb-8' : ''} relative surface-card`}>
                 <button
                   type="button"
                   onClick={() => toggleSection('tools')}
@@ -624,7 +671,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
               </div>
 
               {/* Quick Prompts */}
-              <div className="surface-card">
+              <div className={`${isPreviewCollapsed ? 'float-right clear-right w-[calc(50%-1rem)] mb-8' : ''} surface-card`}>
                 <button
                   type="button"
                   onClick={() => toggleSection('prompts')}
@@ -632,7 +679,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                 >
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Quick Prompts</h3>
+                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Prompts & Examples</h3>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${openSections.prompts ? 'rotate-180' : ''}`} />
                 </button>
@@ -643,82 +690,163 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                     opacity: openSections.prompts ? 1 : 0,
                   }}
                 >
-                  <p className="text-xs text-muted-foreground mb-3">Add suggested prompts for users. Drag to reorder.</p>
-                  <div className="flex flex-col gap-3">
-                    {quickPrompts.map((prompt, index) => (
-                      <div
-                        key={index}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => handleDragOver(e, index)}
-                        onDragEnd={handleDragEnd}
-                        className={`group flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg border-2 border-transparent hover:border-primary/20 transition-all ${draggedPromptIndex === index ? 'opacity-40 scale-95' : 'hover:shadow-sm'
-                          }`}
-                      >
-                        <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors cursor-grab active:cursor-grabbing">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
-                          </svg>
+                  <div className="space-y-8">
+                    <div>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">
+                        Example Messages
+                      </label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Shown before the first message so users can start from sample requests.
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {examplePrompts.map((prompt, index) => (
+                          <div
+                            key={index}
+                            className="group flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg border-2 border-transparent hover:border-primary/20 transition-all hover:shadow-sm"
+                          >
+                            <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
+                              <Sparkles className="w-4 h-4" />
+                            </div>
+                            <input
+                              type="text"
+                              value={prompt}
+                              onChange={(e) => {
+                                const newPrompts = [...examplePrompts];
+                                newPrompts[index] = e.target.value;
+                                setExamplePrompts(newPrompts);
+                              }}
+                              className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                            />
+                            <button
+                              onClick={() => {
+                                const newPrompts = examplePrompts.filter((_, i) => i !== index);
+                                setExamplePrompts(newPrompts);
+                              }}
+                              className="flex-shrink-0 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                              title="Delete example"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-3 px-3 py-2 bg-accent/30 rounded-lg border-2 border-dashed border-primary/30">
+                          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                            <Plus className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <input
+                            type="text"
+                            value={newExamplePrompt}
+                            onChange={(e) => setNewExamplePrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newExamplePrompt.trim()) {
+                                setExamplePrompts([...examplePrompts, newExamplePrompt.trim()]);
+                                setNewExamplePrompt('');
+                              }
+                            }}
+                            placeholder="Add a new example message..."
+                            className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              if (newExamplePrompt.trim()) {
+                                setExamplePrompts([...examplePrompts, newExamplePrompt.trim()]);
+                                setNewExamplePrompt('');
+                              }
+                            }}
+                            disabled={!newExamplePrompt.trim()}
+                            className="btn-primary btn-icon disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Add example"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
                         </div>
-                        <input
-                          type="text"
-                          value={prompt}
-                          onChange={(e) => {
-                            const newPrompts = [...quickPrompts];
-                            newPrompts[index] = e.target.value;
-                            setQuickPrompts(newPrompts);
-                          }}
-                          className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
-                        />
-                        <button
-                          onClick={() => {
-                            const newPrompts = quickPrompts.filter((_, i) => i !== index);
-                            setQuickPrompts(newPrompts);
-                          }}
-                          className="flex-shrink-0 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                          title="Delete prompt"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
-                    ))}
-                    <div className="flex items-center gap-3 px-3 py-2 bg-accent/30 rounded-lg border-2 border-dashed border-primary/30">
-                      <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                        <Plus className="w-4 h-4 text-muted-foreground" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">
+                        Quick Prompts
+                      </label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Follow-up prompts shown after an assistant reply. Drag to reorder.
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        {quickPrompts.map((prompt, index) => (
+                          <div
+                            key={index}
+                            draggable
+                            onDragStart={() => handleQuickPromptDragStart(index)}
+                            onDragOver={(e) => handleQuickPromptDragOver(e, index)}
+                            onDragEnd={handleQuickPromptDragEnd}
+                            className={`group flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg border-2 border-transparent hover:border-primary/20 transition-all ${draggedQuickPromptIndex === index ? 'opacity-40 scale-95' : 'hover:shadow-sm'
+                              }`}
+                          >
+                            <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors cursor-grab active:cursor-grabbing">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                              </svg>
+                            </div>
+                            <input
+                              type="text"
+                              value={prompt}
+                              onChange={(e) => {
+                                const newPrompts = [...quickPrompts];
+                                newPrompts[index] = e.target.value;
+                                setQuickPrompts(newPrompts);
+                              }}
+                              className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                            />
+                            <button
+                              onClick={() => {
+                                const newPrompts = quickPrompts.filter((_, i) => i !== index);
+                                setQuickPrompts(newPrompts);
+                              }}
+                              className="flex-shrink-0 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                              title="Delete prompt"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-3 px-3 py-2 bg-accent/30 rounded-lg border-2 border-dashed border-primary/30">
+                          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                            <Plus className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <input
+                            type="text"
+                            value={newQuickPrompt}
+                            onChange={(e) => setNewQuickPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && newQuickPrompt.trim()) {
+                                setQuickPrompts([...quickPrompts, newQuickPrompt.trim()]);
+                                setNewQuickPrompt('');
+                              }
+                            }}
+                            placeholder="Add a new quick prompt..."
+                            className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                          />
+                          <button
+                            onClick={() => {
+                              if (newQuickPrompt.trim()) {
+                                setQuickPrompts([...quickPrompts, newQuickPrompt.trim()]);
+                                setNewQuickPrompt('');
+                              }
+                            }}
+                            disabled={!newQuickPrompt.trim()}
+                            className="btn-primary btn-icon disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Add prompt"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <input
-                        type="text"
-                        value={newQuickPrompt}
-                        onChange={(e) => setNewQuickPrompt(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newQuickPrompt.trim()) {
-                            setQuickPrompts([...quickPrompts, newQuickPrompt.trim()]);
-                            setNewQuickPrompt('');
-                          }
-                        }}
-                        placeholder="Add a new quick prompt..."
-                        className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
-                      />
-                      <button
-                        onClick={() => {
-                          if (newQuickPrompt.trim()) {
-                            setQuickPrompts([...quickPrompts, newQuickPrompt.trim()]);
-                            setNewQuickPrompt('');
-                          }
-                        }}
-                        disabled={!newQuickPrompt.trim()}
-                        className="btn-primary btn-icon disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Add prompt"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Access & Visibility */}
-              <div className="surface-card">
+              <div className={`${isPreviewCollapsed ? 'float-left clear-left w-[calc(50%-1rem)] mb-8' : ''} surface-card`}>
                 <button
                   type="button"
                   onClick={() => toggleSection('access')}
@@ -761,7 +889,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
               </div>
 
               {/* Action Buttons */}
-              <div className={`surface-card ${isPreviewCollapsed ? 'col-span-2' : ''}`}>
+              <div className={`${isPreviewCollapsed ? 'clear-both w-full' : ''} surface-card`}>
                 <button
                   type="button"
                   onClick={() => toggleSection('actions')}
@@ -789,17 +917,6 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                     {assistant ? 'Update Assistant' : 'Create Assistant'}
                   </button>
 
-                  {/* Secondary Actions */}
-                  <div className="grid grid-cols-1 gap-3">
-                    <button
-                      onClick={handleExport}
-                      className="btn-secondary w-full"
-                    >
-                      <Download className="w-4 h-4" />
-                      Export Configuration
-                    </button>
-                  </div>
-
                   {/* Cancel */}
                   <div className="text-center pt-2">
                     <button
@@ -818,19 +935,14 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
 
       {/* Preview Panel or Transparent Blur - Fade In */}
       <div
-        className={`animate-in fade-in duration-700 ease-out transition-[width,opacity] duration-500 flex flex-col ${creationStep === 'initial'
-          ? 'w-1/2 bg-background/30 backdrop-blur-md'
+        className={`animate-in fade-in duration-700 ease-out transition-[width,opacity] duration-500 flex flex-col ${creationStep === 'initial' || creationStep === 'ai-input'
+          ? 'w-0 opacity-0 overflow-hidden border-none pointer-events-none'
           : isPreviewCollapsed
             ? 'w-0 opacity-0 overflow-hidden border-none pointer-events-none'
             : 'w-1/2 bg-background border-l opacity-100'
           }`}
       >
-        {creationStep === 'initial' ? (
-          <div className="h-full w-full flex items-center justify-center">
-            {/* The background is now handled by the overlay + backdrop-blur, showing the actual app behind it.
-                 We can add a subtle hint text or just leave it clean. */}
-          </div>
-        ) : (
+        {creationStep === 'form' && (
           <div className="h-full flex flex-col animate-in fade-in duration-500 min-w-[300px]">
             <div className="px-8 py-6 bg-card border-b flex-shrink-0">
               <h3 className="text-2xl font-bold text-foreground">Live Preview</h3>

@@ -103,6 +103,21 @@ export const getRecommendedAssistants = (): Assistant[] => [
 
 export const getCommunityAssistants = (): Assistant[] => [
   {
+    id: 'ops-1',
+    name: 'Service Operations Navigator',
+    description: 'Helps employees navigate complex operational service workflows across multiple city systems, including ticket triage, escalation paths, ownership handoffs between first-level and specialist teams, maintenance-window communication planning, and post-incident documentation standards. It is designed for situations where information is fragmented across internal guidelines and users need one place to understand responsibilities, required approvals, fallback procedures, and what to communicate to stakeholders at each stage.',
+    icon: '🧭',
+    systemPrompt: 'You are an operations support assistant for municipal service teams. Explain runbooks clearly, identify likely owners for each issue type, and provide step-by-step escalation guidance with concise stakeholder updates.',
+    responseBehavior: 'balanced',
+    allowedTools: ['search', 'file_upload'],
+    createdBy: 'Direktorium',
+    isPublic: true,
+    updatedAt: '2025-11-07T09:20:00Z',
+    subscriptionCount: 740,
+    version: '1.0.0',
+    publishedDepartments: ['rit', 'kvr', 'plan'],
+  },
+  {
     id: 'por-1',
     name: 'Onboarding Buddy',
     description: 'Helps new city employees (LHM) with orientation and intranet navigation.',

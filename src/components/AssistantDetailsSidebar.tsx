@@ -1,8 +1,11 @@
 import { Assistant } from '../types';
 import { exportAssistantData } from './AssistantDetailsPage';
-import { Star, Edit, Copy, Download, Trash2, Info, Sparkles, Zap, FileUp, X, MoreVertical, MessageSquare } from 'lucide-react';
-import { useState } from 'react';
-import { useTranslation } from '../contexts/LanguageContext';
+import { Star, Edit, Copy, Download, Trash2, Info, Sparkles, Zap, FileUp, X, MoreVertical, MessageSquare, ChevronDown, type LucideIcon } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { departments } from '../data/departments';
+import { findLLMModelById } from '../data/llmModels';
+import { cn } from './ui/utils';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -30,7 +33,7 @@ interface AssistantDetailsSidebarProps {
 // Helper function to format tool names
 const formatToolName = (tool: string): string => {
     return tool
-        .split('_')
+        .split(/[-_]/)
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 };
@@ -49,6 +52,54 @@ const getToolColor = (tool: string): string => {
     return colors[tool] || 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-700';
 };
 
+const flattenDepartments = (items: typeof departments): { id: string; name: string }[] => {
+    const result: { id: string; name: string }[] = [];
+    const visit = (nodes: typeof departments) => {
+        nodes.forEach((node) => {
+            result.push({ id: node.id, name: node.name });
+            if (node.children?.length) {
+                visit(node.children);
+            }
+        });
+    };
+    visit(items);
+    return result;
+};
+
+type SectionKey = 'about' | 'systemPrompt' | 'responseStyle' | 'tools' | 'examplePrompts' | 'quickPrompts' | 'technical';
+
+interface SidebarSectionProps {
+    title: string;
+    icon: LucideIcon;
+    open: boolean;
+    onToggle: () => void;
+    children: ReactNode;
+    className?: string;
+}
+
+function SidebarSection({ title, icon: Icon, open, onToggle, children, className }: SidebarSectionProps) {
+    return (
+        <section className={cn('py-3', className)}>
+            <button
+                type="button"
+                onClick={onToggle}
+                className="w-full flex items-center justify-between text-left gap-3"
+            >
+                <span className="text-[11px] font-semibold text-foreground dark:text-foreground uppercase tracking-[0.08em] flex items-center gap-2">
+                    <Icon className="w-4 h-4" /> {title}
+                </span>
+                <ChevronDown
+                    className={cn(
+                        'w-4 h-4 text-foreground/80 dark:text-foreground/85 transition-transform',
+                        open ? 'rotate-180' : 'rotate-0'
+                    )}
+                />
+            </button>
+            {open && <div className="mt-3 animate-fade-up text-sm text-foreground/90 dark:text-foreground leading-relaxed">{children}</div>}
+        </section>
+    );
+}
+
 export function AssistantDetailsSidebar({
     assistant,
     userAssistants,
@@ -62,35 +113,72 @@ export function AssistantDetailsSidebar({
     showStartConversationButton = true,
 }: AssistantDetailsSidebarProps) {
     const [showMoreOptions, setShowMoreOptions] = useState(false);
+    const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const { t } = useTranslation();
-
-    const isOwner = userAssistants.some(a => a.id === assistant.id);
+    const optionsButtonRef = useRef<HTMLButtonElement | null>(null);
+    const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
+        about: true,
+        systemPrompt: false,
+        responseStyle: false,
+        tools: true,
+        examplePrompts: false,
+        quickPrompts: false,
+        technical: false,
+    });
+    const departmentMap = flattenDepartments(departments).reduce<Record<string, string>>((acc, item) => {
+        acc[item.id] = item.name;
+        return acc;
+    }, {});
+    const publishedDepartmentNames = (assistant.publishedDepartments || []).map((id) => departmentMap[id] || id);
+    const defaultLlmModelName = findLLMModelById(assistant.defaultLlmModel)?.name || assistant.defaultLlmModel || '-';
+    const behaviorMeta = assistant.responseBehavior === 'creative'
+        ? {
+            summary: 'Open-ended and creative responses.',
+        }
+        : assistant.responseBehavior === 'precise'
+            ? {
+                summary: 'Direct and factual responses.',
+            }
+            : {
+                summary: 'Practical and balanced responses.',
+            };
+    const toggleSection = (key: SectionKey) => {
+        setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+    };
+    const handleToggleMoreOptions = () => {
+        if (!showMoreOptions && optionsButtonRef.current) {
+            const rect = optionsButtonRef.current.getBoundingClientRect();
+            const menuWidth = 192; // w-48
+            const viewportPadding = 12;
+            const maxLeft = window.innerWidth - menuWidth - viewportPadding;
+            setMenuPosition({
+                top: rect.bottom + 8,
+                left: Math.min(maxLeft, Math.max(viewportPadding, rect.right - menuWidth)),
+            });
+        }
+        setShowMoreOptions((prev) => !prev);
+    };
 
     return (
-        <div className="bg-card w-full h-full overflow-y-auto flex flex-col">
-            <div className="p-6 space-y-8 min-w-[300px] max-w-[400px] flex-grow">
-                {/* Panel Header */}
-                <div className="flex flex-col items-center text-center relative">
+        <div className="bg-card w-full h-full overflow-y-auto thin-scrollbar">
+            <div className="p-6 space-y-7 min-w-[300px] max-w-[400px]">
+                <section className="relative overflow-hidden rounded-3xl border border-border/55 bg-gradient-to-b from-secondary/20 via-card to-card px-5 pt-6 pb-5 shadow-sm">
+                    <div className="pointer-events-none absolute -top-10 -right-6 h-24 w-24 rounded-full bg-primary/5 blur-2xl" />
                     <button
                         onClick={onClose}
-                        className="absolute top-0 right-0 p-2 hover:bg-accent rounded-full transition-colors text-muted-foreground"
+                        className="absolute top-3 right-3 p-2 hover:bg-accent/70 rounded-full transition-colors text-muted-foreground/90 dark:text-foreground/80"
                     >
                         <X className="w-5 h-5" />
                     </button>
 
-                    <div className="w-24 h-24 rounded-3xl bg-background border border-border shadow-sm flex items-center justify-center text-5xl mb-4">
-                        {assistant.icon}
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground">{assistant.name}</h2>
-                    <div className="flex flex-col gap-2 mt-2 items-center">
-                        <div className="flex gap-2">
-                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground border border-border">
-                                {assistant.responseBehavior === 'creative' ? '🎨 Creative' :
-                                    assistant.responseBehavior === 'precise' ? '🎯 Precise' : '⚖️ Balanced'}
-                            </span>
+                    <div className="flex flex-col items-center text-center">
+                        <div className="w-24 h-24 rounded-3xl bg-card border border-border/45 flex items-center justify-center text-5xl mb-4">
+                            {assistant.icon}
+                        </div>
+                        <h2 className="text-[1.75rem] font-semibold text-foreground leading-[1.18] tracking-[-0.015em]">{assistant.name}</h2>
+                        <div className="flex flex-wrap justify-center gap-2 mt-3 items-center">
                             {assistant.deletedByOwner && (
-                                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border flex items-center gap-1">
+                                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground dark:text-foreground/80 border border-border/70 flex items-center gap-1">
                                     <Trash2 className="w-3 h-3" /> Deleted by owner
                                 </span>
                             )}
@@ -100,119 +188,115 @@ export function AssistantDetailsSidebar({
                                 </span>
                             )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground">
-                            {assistant.responseBehavior === 'creative' && 'Prefers imaginative and shorter responses.'}
-                            {assistant.responseBehavior === 'precise' && 'Focuses on factual and detailed accuracy.'}
-                            {assistant.responseBehavior === 'balanced' && 'Maintains a neutral and informative tone.'}
-                        </p>
                     </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex relative shadow-md shadow-primary/20 rounded-lg group">
-                    {showStartConversationButton && (
-                        <button
-                            onClick={() => onSelectAssistant(assistant)}
-                            className="btn-primary w-full py-3 text-base flex-1 rounded-r-none border-none hover:bg-primary/90 focus:ring-0 transition-colors shadow-none"
-                        >
-                            <div className="flex items-center justify-center gap-2">
-                                <MessageSquare className="w-5 h-5" />
-                                Start Conversation
-                            </div>
-                        </button>
-                    )}
-
-                    {/* Vertical divider */}
-                    {showStartConversationButton && <div className="w-px bg-primary-foreground/20 z-10 my-1.5" />}
-
-                    <button
-                        onClick={() => setShowMoreOptions(!showMoreOptions)}
-                        className={`btn-primary px-3 py-3 border-none hover:bg-primary/90 focus:ring-0 focus:bg-primary/80 transition-colors shadow-none active:bg-primary/80 ${showStartConversationButton ? 'rounded-l-none' : 'w-full rounded-lg'}`}
-                        aria-label="More options"
-                    >
-                        {showStartConversationButton ? (
-                            <MoreVertical className="w-5 h-5" />
-                        ) : (
-                            <div className="flex items-center justify-center gap-2">
-                                <MoreVertical className="w-4 h-4" /> Options
-                            </div>
+                    <div className="mt-5 flex relative shadow-md shadow-primary/15 rounded-xl group overflow-hidden">
+                        {showStartConversationButton && (
+                            <button
+                                onClick={() => onSelectAssistant(assistant)}
+                                className="btn-primary w-full py-3 text-base flex-1 rounded-none border-none hover:bg-primary/90 focus:ring-0 transition-colors shadow-none"
+                            >
+                                <div className="flex items-center justify-center gap-2">
+                                    <MessageSquare className="w-5 h-5" />
+                                    Start Conversation
+                                </div>
+                            </button>
                         )}
-                    </button>
 
-                    {showMoreOptions && (
-                        <>
-                            <div className="fixed inset-0 z-10" onClick={() => setShowMoreOptions(false)} />
-                            <div className="absolute right-0 top-full mt-2 w-48 surface-popover z-30 p-1.5 rounded-xl text-sm bg-card border border-border shadow-2xl animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5">
+                        {showStartConversationButton && <div className="w-px bg-primary-foreground/20 z-10 my-1.5" />}
 
-                                {onEditAssistant && userAssistants.some(a => a.id === assistant.id) && (
-                                    <button
-                                        onClick={() => {
-                                            onEditAssistant(assistant);
-                                            setShowMoreOptions(false);
-                                        }}
-                                        className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                        {showStartConversationButton && (
+                            <button
+                                ref={optionsButtonRef}
+                                onClick={handleToggleMoreOptions}
+                                className="btn-primary px-3 py-3 border-none hover:bg-primary/90 focus:ring-0 focus:bg-primary/80 transition-colors shadow-none active:bg-primary/80 rounded-none"
+                                aria-label="More options"
+                            >
+                                <MoreVertical className="w-5 h-5" />
+                            </button>
+                        )}
+
+                        {showStartConversationButton && showMoreOptions && (
+                            typeof document !== 'undefined' && menuPosition && createPortal(
+                                <>
+                                    <div className="fixed inset-0 z-[100]" onClick={() => setShowMoreOptions(false)} />
+                                    <div
+                                        className="fixed w-48 surface-popover z-[110] p-1.5 rounded-xl text-sm bg-card border border-border shadow-2xl animate-in fade-in zoom-in-95 duration-100 flex flex-col gap-0.5"
+                                        style={{ top: menuPosition.top, left: menuPosition.left }}
                                     >
-                                        <Edit className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                        <span className="font-medium">Edit</span>
-                                    </button>
-                                )}
 
-                                {onDuplicateAssistant && (
-                                    <button
-                                        onClick={() => {
-                                            onDuplicateAssistant(assistant);
-                                            setShowMoreOptions(false);
-                                        }}
-                                        className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
-                                    >
-                                        <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                        <span className="font-medium">Duplicate</span>
-                                    </button>
-                                )}
+                                        {onEditAssistant && userAssistants.some(a => a.id === assistant.id) && (
+                                            <button
+                                                onClick={() => {
+                                                    onEditAssistant(assistant);
+                                                    setShowMoreOptions(false);
+                                                }}
+                                                className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                                            >
+                                                <Edit className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                <span className="font-medium">Edit</span>
+                                            </button>
+                                        )}
 
-                                {onToggleSubscribe && (
-                                    <button
-                                        onClick={() => {
-                                            onToggleSubscribe(assistant.id);
-                                            setShowMoreOptions(false);
-                                        }}
-                                        className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
-                                    >
-                                        <Star className={`w-4 h-4 ${subscribedIds.includes(assistant.id) ? 'fill-current text-yellow-500' : 'text-muted-foreground group-hover:text-yellow-500'} transition-colors`} />
-                                        <span className="font-medium">{subscribedIds.includes(assistant.id) ? 'Unsubscribe' : 'Subscribe'}</span>
-                                    </button>
-                                )}
+                                        {onDuplicateAssistant && (
+                                            <button
+                                                onClick={() => {
+                                                    onDuplicateAssistant(assistant);
+                                                    setShowMoreOptions(false);
+                                                }}
+                                                className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                                            >
+                                                <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                <span className="font-medium">Duplicate</span>
+                                            </button>
+                                        )}
 
-                                <button
-                                    onClick={() => {
-                                        exportAssistantData(assistant);
-                                        setShowMoreOptions(false);
-                                    }}
-                                    className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
-                                >
-                                    <Download className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                    <span className="font-medium">Export</span>
-                                </button>
+                                        {onToggleSubscribe && (
+                                            <button
+                                                onClick={() => {
+                                                    onToggleSubscribe(assistant.id);
+                                                    setShowMoreOptions(false);
+                                                }}
+                                                className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                                            >
+                                                <Star className={`w-4 h-4 ${subscribedIds.includes(assistant.id) ? 'fill-current text-yellow-500' : 'text-muted-foreground group-hover:text-yellow-500'} transition-colors`} />
+                                                <span className="font-medium">{subscribedIds.includes(assistant.id) ? 'Unsubscribe' : 'Subscribe'}</span>
+                                            </button>
+                                        )}
 
-                                {onDeleteAssistant && userAssistants.some(a => a.id === assistant.id) && (
-                                    <>
-                                        <div className="h-px bg-border/50 my-1 mx-1" />
                                         <button
                                             onClick={() => {
-                                                setShowDeleteDialog(true);
+                                                exportAssistantData(assistant);
                                                 setShowMoreOptions(false);
                                             }}
-                                            className="w-full px-3 py-2 text-left hover:bg-destructive/10 text-destructive rounded-md transition-all flex items-center gap-3 group"
+                                            className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
                                         >
-                                            <Trash2 className="w-4 h-4" />
-                                            <span className="font-medium">Delete</span>
+                                            <Download className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                            <span className="font-medium">Export</span>
                                         </button>
-                                    </>
-                                )}
-                            </div>
-                        </>
-                    )}
-                </div>
+
+                                        {onDeleteAssistant && userAssistants.some(a => a.id === assistant.id) && (
+                                            <>
+                                                <div className="h-px bg-border/50 my-1 mx-1" />
+                                                <button
+                                                    onClick={() => {
+                                                        setShowDeleteDialog(true);
+                                                        setShowMoreOptions(false);
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left hover:bg-destructive/10 text-destructive rounded-md transition-all flex items-center gap-3 group"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    <span className="font-medium">Delete</span>
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </>,
+                                document.body
+                            )
+                        )}
+                    </div>
+                </section>
 
                 {onDeleteAssistant && (
                     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -240,57 +324,126 @@ export function AssistantDetailsSidebar({
                     </AlertDialog>
                 )}
 
-                {/* Details */}
-                <div className="space-y-6">
-                    <div>
-                        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Info className="w-4 h-4" /> About
-                        </h3>
-                        <p className="text-foreground leading-relaxed text-sm">
-                            {assistant.description}
-                        </p>
-                    </div>
+                <div className="rounded-2xl bg-card/30 divide-y divide-border/45">
+                    <SidebarSection
+                        title="About"
+                        icon={Info}
+                        open={expandedSections.about}
+                        onToggle={() => toggleSection('about')}
+                    >
+                        <p>{assistant.description}</p>
+                    </SidebarSection>
+
+                    {assistant.systemPrompt && (
+                        <SidebarSection
+                            title="System Prompt"
+                            icon={FileUp}
+                            open={expandedSections.systemPrompt}
+                            onToggle={() => toggleSection('systemPrompt')}
+                        >
+                            <div className="rounded-xl bg-muted/35 ring-1 ring-border/60 p-4 overflow-x-auto max-h-60">
+                                <pre className="font-mono text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                                    {assistant.systemPrompt}
+                                </pre>
+                            </div>
+                        </SidebarSection>
+                    )}
+
+                    <SidebarSection
+                        title="Response Style"
+                        icon={Info}
+                        open={expandedSections.responseStyle}
+                        onToggle={() => toggleSection('responseStyle')}
+                    >
+                        <p>{behaviorMeta.summary}</p>
+                    </SidebarSection>
 
                     {assistant.allowedTools.length > 0 && (
-                        <div>
-                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4" /> Enabled Tools
-                            </h3>
+                        <SidebarSection
+                            title="Enabled Tools"
+                            icon={Sparkles}
+                            open={expandedSections.tools}
+                            onToggle={() => toggleSection('tools')}
+                        >
                             <div className="flex flex-wrap gap-2">
                                 {assistant.allowedTools.map((tool) => (
-                                    <span key={tool} className={`text-xs px-2.5 py-1 rounded-md border font-medium ${getToolColor(tool)}`}>
+                                    <span key={tool} className={`text-xs px-2.5 py-1 rounded-full border font-medium ${getToolColor(tool)}`}>
                                         {formatToolName(tool)}
                                     </span>
                                 ))}
                             </div>
-                        </div>
+                        </SidebarSection>
                     )}
 
                     {assistant.quickPrompts && assistant.quickPrompts.length > 0 && (
-                        <div>
-                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Zap className="w-4 h-4" /> Quick Prompts
-                            </h3>
+                        <SidebarSection
+                            title="Quick Prompts"
+                            icon={Zap}
+                            open={expandedSections.quickPrompts}
+                            onToggle={() => toggleSection('quickPrompts')}
+                        >
                             <div className="space-y-2">
                                 {assistant.quickPrompts.map((prompt, i) => (
-                                    <div key={i} className="p-3 rounded-lg bg-muted/50 border border-border/50 text-sm text-foreground italic hover:bg-muted transition-colors cursor-default">
+                                    <div key={i} className="p-3 rounded-lg bg-muted/40 text-sm text-foreground/90 italic hover:bg-muted/70 transition-colors cursor-default">
                                         "{prompt}"
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </SidebarSection>
                     )}
 
-                    {assistant.systemPrompt && (
-                        <div>
-                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <FileUp className="w-4 h-4" /> System Prompt
-                            </h3>
-                            <div className="bg-muted/30 rounded-lg p-4 font-mono text-xs text-muted-foreground border border-border overflow-x-auto max-h-60">
-                                {assistant.systemPrompt}
+                    {assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
+                        <SidebarSection
+                            title="Example Messages"
+                            icon={Sparkles}
+                            open={expandedSections.examplePrompts}
+                            onToggle={() => toggleSection('examplePrompts')}
+                        >
+                            <div className="space-y-2">
+                                {assistant.examplePrompts.map((prompt, i) => (
+                                    <div key={i} className="p-3 rounded-lg bg-muted/40 text-sm text-foreground/90 italic hover:bg-muted/70 transition-colors cursor-default">
+                                        "{prompt}"
+                                    </div>
+                                ))}
+                            </div>
+                        </SidebarSection>
+                    )}
+
+                    <SidebarSection
+                        title="Technical & Sharing Details"
+                        icon={Info}
+                        open={expandedSections.technical}
+                        onToggle={() => toggleSection('technical')}
+                    >
+                        <div className="rounded-xl bg-muted/35 ring-1 ring-border/60 overflow-hidden text-sm">
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 px-4 py-2.5 border-b border-border/55">
+                                <span className="text-muted-foreground dark:text-foreground/75">Visibility</span>
+                                <span className="text-foreground font-medium">{assistant.isPublic ? 'Public' : 'Private'}</span>
+                            </div>
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 px-4 py-2.5 border-b border-border/55">
+                                <span className="text-muted-foreground dark:text-foreground/75">Version</span>
+                                <span className="text-foreground font-medium">{assistant.version ? `v${assistant.version}` : '-'}</span>
+                            </div>
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 px-4 py-2.5 border-b border-border/55">
+                                <span className="text-muted-foreground dark:text-foreground/75">Default model</span>
+                                <span className="text-foreground font-medium">{defaultLlmModelName}</span>
+                            </div>
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 px-4 py-2.5 border-b border-border/55">
+                                <span className="text-muted-foreground dark:text-foreground/75">Users</span>
+                                <span className="text-foreground font-medium">{(assistant.subscriptionCount || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 px-4 py-2.5">
+                                <span className="text-muted-foreground dark:text-foreground/75">Shared with</span>
+                                <span className="text-foreground text-right font-medium">
+                                    {assistant.isPublic && publishedDepartmentNames.length === 0
+                                        ? 'All'
+                                        : publishedDepartmentNames.length > 0
+                                            ? publishedDepartmentNames.join(', ')
+                                            : '-'}
+                                </span>
                             </div>
                         </div>
-                    )}
+                    </SidebarSection>
                 </div>
 
             </div>

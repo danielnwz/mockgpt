@@ -56,6 +56,9 @@ export function ChatPreview({ assistant }: ChatPreviewProps) {
     handleSubmit(fakeEvent, prompt);
   };
 
+  const lastMessage = messages[messages.length - 1];
+  const shouldShowFollowUpPrompts = Boolean(assistant.quickPrompts?.length) && lastMessage?.role === 'assistant';
+
   return (
     <div className="h-full flex flex-col bg-card/80 backdrop-blur-sm">
       {/* Preview Header */}
@@ -73,15 +76,15 @@ export function ChatPreview({ assistant }: ChatPreviewProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.length === 0 && assistant.quickPrompts && assistant.quickPrompts.length > 0 && (
+        {messages.length === 0 && assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
           <div className="h-full flex items-center justify-center">
             <div className="w-full max-w-xl text-center space-y-6">
               <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Quick Prompts</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Example Messages</p>
                 <h4 className="text-lg font-semibold text-foreground">Try one to start the preview</h4>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {assistant.quickPrompts.map((prompt, index) => (
+                {assistant.examplePrompts.map((prompt, index) => (
                   <button
                     key={index}
                     onClick={() => handleQuickPrompt(prompt)}
@@ -128,6 +131,23 @@ export function ChatPreview({ assistant }: ChatPreviewProps) {
             )}
           </div>
         ))}
+
+        {shouldShowFollowUpPrompts && (
+          <div className="rounded-2xl border bg-primary/5 p-4">
+            <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-3">Quick Follow-ups</p>
+            <div className="flex flex-wrap gap-2">
+              {assistant.quickPrompts!.map((prompt, index) => (
+                <button
+                  key={`${prompt}-${index}`}
+                  onClick={() => handleQuickPrompt(prompt)}
+                  className="rounded-full border border-primary/30 bg-background px-3 py-1.5 text-xs text-foreground hover:bg-primary/10 transition-colors"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div ref={messagesEndRef} />
       </div>

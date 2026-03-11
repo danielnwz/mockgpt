@@ -11,9 +11,89 @@ import { VersionNotes } from './components/VersionNotes';
 import { SecureModeIntroModal } from './components/SecureModeIntroModal';
 import { Assistant, Chat, Message } from './types';
 import { getRecommendedAssistants, getCommunityAssistants, getOwnedAssistants, getSubscribedAssistants } from './data/assistants';
+import { findLLMModelById, getFallbackLLMModelId } from './data/llmModels';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version';
+
+const getDefaultSubscribedIds = (): string[] =>
+  getSubscribedAssistants().map((assistant) => assistant.id);
+
+const createMockChats = (subscribedAssistantIds: string[]): Chat[] => {
+  if (subscribedAssistantIds.length === 0) return [];
+
+  const primaryAssistantId = subscribedAssistantIds[0];
+  const secondaryAssistantId = subscribedAssistantIds[1] ?? primaryAssistantId;
+
+  return [
+    {
+      id: 'mock-chat-1',
+      title: 'Tax deadline checklist',
+      assistantId: primaryAssistantId,
+      messages: [
+        {
+          id: 'mock-chat-1-user-1',
+          role: 'user',
+          content: 'What documents should I collect before filing my tax return?',
+          timestamp: '2026-03-09T08:13:00.000Z',
+        },
+        {
+          id: 'mock-chat-1-assistant-1',
+          role: 'assistant',
+          content: 'Start with income statements, deductible expense receipts, and insurance contributions. I can help you turn that into a filing checklist.',
+          timestamp: '2026-03-09T08:13:20.000Z',
+        },
+      ],
+      createdAt: '2026-03-09T08:13:00.000Z',
+      updatedAt: '2026-03-09T08:13:20.000Z',
+      llmModel: 'gpt-4.1-mini',
+    },
+    {
+      id: 'mock-chat-2',
+      title: 'SEO title ideas',
+      assistantId: secondaryAssistantId,
+      messages: [
+        {
+          id: 'mock-chat-2-user-1',
+          role: 'user',
+          content: 'Give me 5 SEO-friendly title options for a React performance guide.',
+          timestamp: '2026-03-10T11:02:00.000Z',
+        },
+        {
+          id: 'mock-chat-2-assistant-1',
+          role: 'assistant',
+          content: 'Sure. I can propose options focused on Core Web Vitals, render optimization, and measurable speed improvements.',
+          timestamp: '2026-03-10T11:02:22.000Z',
+        },
+      ],
+      createdAt: '2026-03-10T11:02:00.000Z',
+      updatedAt: '2026-03-10T11:02:22.000Z',
+      llmModel: 'gpt-4.1-mini',
+    },
+    {
+      id: 'mock-chat-3',
+      title: 'Expense category review',
+      assistantId: primaryAssistantId,
+      messages: [
+        {
+          id: 'mock-chat-3-user-1',
+          role: 'user',
+          content: 'Can commuting costs and home office equipment be claimed together?',
+          timestamp: '2026-03-11T07:45:00.000Z',
+        },
+        {
+          id: 'mock-chat-3-assistant-1',
+          role: 'assistant',
+          content: 'Yes, potentially. They are usually separate categories, so we should calculate each one with the right evidence and limits.',
+          timestamp: '2026-03-11T07:45:25.000Z',
+        },
+      ],
+      createdAt: '2026-03-11T07:45:00.000Z',
+      updatedAt: '2026-03-11T07:45:25.000Z',
+      llmModel: 'gpt-4.1-mini',
+    },
+  ];
+};
 
 export default function App() {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -37,14 +117,18 @@ export default function App() {
     return mockAssistants;
   });
   const [chats, setChats] = useState<Chat[]>(() => {
-    const saved = localStorage.getItem('chats');
-    return saved ? JSON.parse(saved) : [];
+    const savedChats = localStorage.getItem('chats');
+    if (savedChats) return JSON.parse(savedChats);
+
+    const savedSubscribed = localStorage.getItem('subscribedAssistants');
+    const initialSubscribedIds = savedSubscribed ? JSON.parse(savedSubscribed) : getDefaultSubscribedIds();
+    return createMockChats(initialSubscribedIds);
   });
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
   const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null);
   const [subscribedIds, setSubscribedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('subscribedAssistants');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : getDefaultSubscribedIds();
   });
 
   const [privateMode, setPrivateMode] = useState(false);
@@ -82,6 +166,14 @@ export default function App() {
   };
 
   const handleStartChat = (message: string, assistant?: Assistant) => {
+    const configuredModel = assistant?.defaultLlmModel;
+    const canUseConfiguredModel = configuredModel
+      ? (!privateMode || Boolean(findLLMModelById(configuredModel)?.privateAllowed))
+      : false;
+    const initialLlmModel = canUseConfiguredModel
+      ? configuredModel
+      : getFallbackLLMModelId(privateMode);
+
     const newChat: Chat = {
       id: Date.now().toString(),
       title: message.slice(0, 50) || `Chat with ${assistant?.name || 'Assistant'}`,
@@ -96,6 +188,7 @@ export default function App() {
       ] : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      llmModel: initialLlmModel,
       // Add a flag to track if this chat was created in private mode, if we want persistence later
       // isPrivate: privateMode 
     };
@@ -334,6 +427,7 @@ export default function App() {
               chats={chats}
               assistants={allAssistants}
               currentChatId={currentChat?.id}
+              activeAssistantId={currentChat?.assistantId}
               onSelectChat={handleSelectChat}
               onDeleteChat={handleDeleteChat}
               onRenameChat={(chatId, title) => {

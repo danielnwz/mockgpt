@@ -1,4 +1,4 @@
-import { Star, Plus, Search, FileUp, X, Users, Check, ChevronDown, Trash2 } from 'lucide-react';
+import { Star, Plus, Search, FileUp, X, Check, ChevronDown, Trash2 } from 'lucide-react';
 import { Assistant } from '../types';
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -254,34 +254,15 @@ export function AssistantDiscovery({
                     </p>
                   </div>
 
-                  {/* Footer */}
-                  <div className="relative z-[1] px-5 py-3 border-t border-border/40 bg-muted/20">
-                    <div className="flex items-center text-[11px] text-muted-foreground relative min-h-[16px]">
-                      {/* Left: Subscribers */}
-                      <span className="flex items-center gap-1.5 font-medium absolute left-0" title="Subscribers">
-                        <Users className="w-3.5 h-3.5 text-primary/60" />
-                        {(assistant.subscriptionCount || 0).toLocaleString()}
-                      </span>
-
-                      {/* Middle: Deleted Badge */}
-                      {assistant.deletedByOwner ? (
-                        <div className="flex-1 flex justify-center w-full">
-                          <span className="flex items-center gap-1.5 font-medium text-muted-foreground/80" title="Deleted by Owner">
-                            <Trash2 className="w-3 h-3" /> Deleted by owner
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex-1 w-full" />
-                      )}
-
-                      {/* Right: Version */}
-                      {assistant.version && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 font-mono font-medium absolute right-0" title="Version">
-                          v{assistant.version}
+                  {assistant.deletedByOwner && (
+                    <div className="relative z-[1] px-5 pb-4">
+                      <div className="flex items-center justify-end text-[11px] text-muted-foreground min-h-[16px]">
+                        <span className="flex items-center gap-1.5 font-medium text-muted-foreground/80" title="Deleted by Owner">
+                          <Trash2 className="w-3 h-3" /> Deleted by owner
                         </span>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
