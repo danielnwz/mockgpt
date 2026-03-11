@@ -69,7 +69,7 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
                 <div className="flex items-start gap-3 mb-2">
                   <AlertTriangle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Open Mode — No Data Protection</p>
+                    <p className="text-sm font-semibold text-foreground">Standard Workspace — No Data Protection</p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                       Requests are processed by external AI providers. Do <strong className="text-foreground">not</strong> enter personal data, passwords, internal documents, or any confidential information.
                     </p>
@@ -241,3 +241,4 @@ export function Header({ darkMode, onToggleDarkMode, privateMode }: HeaderProps)
     </>
   );
 }
+

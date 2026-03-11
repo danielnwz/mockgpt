@@ -7,7 +7,7 @@ import {
   History,
   Sparkles,
   Pencil,
-  Lock,
+  DoorOpen,
   ShieldCheck,
   AlertTriangle,
   ChevronDown,
@@ -290,13 +290,13 @@ export function Sidebar({
           {privateMode ? (
             <ShieldCheck className="w-5 h-5 flex-shrink-0 text-primary" />
           ) : (
-            <Lock className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
+            <DoorOpen className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
           )}
 
           {!collapsed && (
             <div className="flex-1 text-left">
               <span className={`text-sm font-medium block ${privateMode ? 'text-primary' : 'text-foreground'}`}>
-                {privateMode ? 'Secure Workspace' : 'Open Mode'}
+                {privateMode ? 'Secure Workspace' : 'Standard Workspace'}
               </span>
               <span className="text-[10px] text-muted-foreground block leading-tight">
                 {privateMode ? 'For sensitive data' : 'For general tasks'}
@@ -335,7 +335,7 @@ export function Sidebar({
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Open Mode - No Data Protection</p>
+                  <p className="text-sm font-semibold text-foreground">Standard Workspace - No Data Protection</p>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                     Requests are processed by external AI providers. Do <strong className="text-foreground">not</strong> enter personal data, passwords, or confidential information.
                   </p>
