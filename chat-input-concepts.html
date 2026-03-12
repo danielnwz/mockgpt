@@ -1,0 +1,888 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Input UI Concepts</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  /* NAV */
+  nav { display: flex; gap: 8px; padding: 16px 28px; background: #0f1117; border-bottom: 1px solid #1e2535; position: sticky; top: 0; z-index: 100; align-items: center; flex-wrap: wrap; }
+  nav button { padding: 7px 18px; border-radius: 999px; border: 1.5px solid #2d3748; background: transparent; color: #94a3b8; cursor: pointer; font-size: 13px; transition: all .2s; }
+  nav button.active { background: #6366f1; border-color: #6366f1; color: #fff; font-weight: 600; }
+  nav .title { color: #e2e8f0; font-weight: 700; font-size: 15px; margin-right: auto; }
+
+  /* PANELS */
+  .panel { display: none; padding: 40px 0 60px; }
+  .panel.active { display: block; }
+
+  .concept-header { text-align: center; max-width: 700px; margin: 0 auto 40px; padding: 0 24px; }
+  .concept-header h2 { font-size: 24px; font-weight: 700; color: #f1f5f9; margin-bottom: 8px; }
+  .concept-header p { color: #64748b; font-size: 14px; line-height: 1.6; }
+  .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  .badge.minimal { background: #1e2535; color: #6366f1; }
+  .badge.progressive { background: #1e2535; color: #22d3ee; }
+  .badge.command { background: #1e2535; color: #a78bfa; }
+
+  /* DEMO AREA */
+  .demo-area { max-width: 820px; margin: 0 auto; padding: 0 24px; }
+
+  /* CHAT MOCKUP */
+  .chat-mockup { background: #131720; border-radius: 20px; border: 1px solid #1e2535; display: flex; flex-direction: column; overflow: visible; }
+  .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #1e2535; }
+  .chat-header-title { font-size: 13px; font-weight: 600; color: #94a3b8; }
+  .expand-top-btn { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 8px; border: 1.5px solid #2d3748; background: transparent; color: #475569; cursor: pointer; font-size: 12px; font-weight: 500; transition: all .15s; }
+  .expand-top-btn:hover { border-color: #6366f1; color: #818cf8; background: #1e2030; }
+  .expand-top-btn svg { flex-shrink: 0; }
+  .chat-messages { padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .msg { display: flex; gap: 10px; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5; max-width: 78%; }
+  .msg.ai .msg-bubble { background: #1e2535; color: #cbd5e1; border-radius: 4px 14px 14px 14px; }
+  .msg.user .msg-bubble { background: #4f46e5; color: #fff; border-radius: 14px 4px 14px 14px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .avatar.ai { background: #272f45; color: #94a3b8; }
+  .avatar.user { background: #4f46e5; color: #fff; }
+  .chat-input-area { padding: 12px 16px 16px; border-top: 1px solid #1e2535; overflow: visible; }
+
+  /* SVG ICONS (inline, no emoji) */
+  .svg-icon { display: block; }
+
+  /* -------- SHARED COMPONENTS -------- */
+  .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1.5px solid transparent; transition: all .15s; }
+  .chip.tool { background: #1e2d45; border-color: #3b5998; color: #60a5fa; }
+  .chip.tool:hover { background: #243557; }
+  .chip.add-tool { background: transparent; border-color: #2d3748; color: #64748b; }
+  .chip.add-tool:hover { border-color: #4f46e5; color: #818cf8; }
+
+  .itn-btn { display: flex; align-items: center; justify-content: center; gap: 5px; border: none; background: transparent; cursor: pointer; transition: all .15s; color: #475569; padding: 0; }
+  .itn-btn:hover { color: #94a3b8; }
+
+  .icon-sq { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid #2d3748; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; color: #64748b; transition: all .15s; }
+  .icon-sq:hover { border-color: #4f46e5; color: #818cf8; background: #1c2040; }
+  .icon-sq.active { border-color: #22d3ee; color: #22d3ee; background: #0c2832; }
+
+  /* TOOLTIP */
+  .tooltip { position: relative; display: inline-flex; }
+  .tooltip-text { visibility:hidden; position:absolute; bottom: calc(100% + 6px); left:50%; transform:translateX(-50%); background:#1e2535; color:#e2e8f0; font-size:11px; padding:4px 8px; border-radius:6px; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .15s; z-index:20; border: 1px solid #2d3748; }
+  .tooltip:hover .tooltip-text { visibility:visible; opacity:1; }
+
+  /* TOOL POPOVER */
+  .popover-wrap { position:relative; display:inline-flex; }
+  .tool-popover { position:absolute; bottom: calc(100% + 8px); left:0; background:#131720; border:1.5px solid #2d3748; border-radius:14px; padding:10px; width:270px; z-index:50; box-shadow:0 20px 60px rgba(0,0,0,.7); display:none; }
+  .tool-popover.open { display:block; }
+  .popover-wrap:focus-within .tool-popover { display:block; }
+  .popover-title { font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; padding: 0 4px; }
+  .tool-item { display:flex; align-items:center; gap:10px; padding:8px 8px; border-radius:9px; cursor:pointer; transition: background .15s; width:100%; border:none; background:transparent; text-align:left; }
+  .tool-item:hover { background:#1e2535; }
+  .tool-item.selected { background:#1e2535; }
+  .tool-icon { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tool-info { flex:1; }
+  .tool-name { font-size:13px; font-weight:600; color:#e2e8f0; }
+  .tool-desc { font-size:11px; color:#475569; }
+  .tool-check { color:#6366f1; opacity:0; }
+  .tool-item.selected .tool-check { opacity:1; }
+  .chip.tool.inactive { background: transparent; border-color: #2d3748; color: #64748b; }
+  .chip.tool.inactive:hover { border-color: #4f46e5; color: #818cf8; }
+
+  /* REASONING DROPDOWN */
+  .reason-drop { position: relative; display: inline-flex; }
+  .reason-trigger { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; border: 1.5px solid #2d3748; background: transparent; color: #64748b; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .reason-trigger:hover { border-color: #4f46e5; color: #a78bfa; }
+  .reason-trigger.has-value { border-color: #a78bfa44; color: #a78bfa; background: #1e1440; }
+  .reason-trigger svg { flex-shrink:0; transition: transform .15s; }
+  .reason-trigger.open svg { transform: rotate(180deg); }
+  .reason-menu { position: absolute; bottom: calc(100% + 6px); left: 0; background: #131720; border: 1.5px solid #2d3748; border-radius: 12px; padding: 6px; min-width: 160px; z-index: 50; box-shadow: 0 16px 48px rgba(0,0,0,.7); display: none; }
+  .reason-menu.open { display: block; }
+  .reason-option { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: #94a3b8; cursor: pointer; transition: background .12s; }
+  .reason-option:hover { background: #1e2535; color: #e2e8f0; }
+  .reason-option.selected { color: #a78bfa; }
+  .reason-option .opt-label { flex: 1; font-weight: 500; }
+  .reason-option .opt-desc { font-size: 11px; color: #475569; }
+  .reason-check { opacity: 0; }
+  .reason-option.selected .reason-check { opacity: 1; }
+  .reason-pills { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .reason-pill { padding: 4px 10px; border-radius: 999px; border: 1.5px solid #2d3748; background: transparent; color: #64748b; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; }
+  .reason-pill:hover { border-color: #4f46e5; color: #a78bfa; }
+  .reason-pill.active { border-color: #a78bfa66; color: #a78bfa; background: #1e1440; }
+  .reason-switch { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .reason-mode-btn { padding: 4px 9px; border-radius: 7px; border: 1.5px solid #2d3748; background: transparent; color: #64748b; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .reason-mode-btn:hover { border-color: #4f46e5; color: #a78bfa; }
+  .reason-mode-btn.active { border-color: #22d3ee66; color: #22d3ee; background: #0c2832; }
+  .reason-c-current { font-size: 11px; color: #64748b; margin-left: 4px; }
+
+  /* TEXTAREA WRAP WITH EXPAND BTN */
+  .ta-wrap { position: relative; }
+  .ta-expand-btn { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid #2d3748; background: #0f1117; color: #475569; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, border-color .15s, color .15s; z-index: 5; }
+  .ta-wrap:hover .ta-expand-btn, .ta-wrap:focus-within .ta-expand-btn { opacity: 1; }
+  .ta-expand-btn:hover { border-color: #6366f1; color: #818cf8; background: #1e2030; }
+  .ta-expand-btn.expanded { opacity: 1; border-color: #6366f1; color: #818cf8; }
+
+  /* CTX BAR */
+  .ctx-bar { display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; }
+  .ctx-track { height:5px; border-radius:999px; background:#1e2535; width:72px; overflow:hidden; }
+  .ctx-fill { height:100%; border-radius:999px; background: linear-gradient(90deg, #6366f1, #22d3ee); width:35%; }
+
+  /* CTX SEGMENTS */
+  .ctx-segs { display:flex; gap:2px; align-items:center; }
+  .ctx-seg { width:9px; height:9px; border-radius:3px; background:#1e2535; }
+  .ctx-seg.u1 { background:#6366f1; }
+
+  /* SEND BTN */
+  .send-main { height: 38px; padding: 0 18px; border-radius: 12px; border: none; background: #6366f1; color: #fff; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .send-main:hover { background: #4f46e5; }
+  .send-main.voice-mode { background: #1e2535; color: #94a3b8; }
+  .send-main.voice-mode:hover { background: #2a1a1a; color: #f87171; }
+
+  .send-sq { width: 38px; height: 38px; border-radius: 12px; border: none; background: #6366f1; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; }
+  .send-sq:hover { background: #4f46e5; transform: scale(1.05); }
+
+  /* TEXTAREA */
+  .ta { width:100%; background:transparent; border:none; outline:none; color:#e2e8f0; font-size:14px; resize:none; line-height:1.6; font-family:inherit; }
+  .ta::placeholder { color:#475569; }
+
+  /* INPUT WRAP */
+  .iw { background: #1a2035; border: 1.5px solid #2d3748; border-radius: 16px; padding: 12px 14px; transition: border-color .2s; }
+  .iw:focus-within { border-color: #6366f1; }
+
+  /* SECTION / ANALYSIS */
+  .section-divider { max-width:820px; margin: 40px auto 16px; padding: 0 24px; }
+  .section-divider h3 { font-size:16px; font-weight:700; color:#f1f5f9; padding-bottom:10px; border-bottom:1px solid #1e2535; }
+  .analysis-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:12px; max-width:820px; margin:0 auto; padding:0 24px; }
+  .analysis-card { background:#131720; border:1.5px solid #1e2535; border-radius:14px; padding:16px; }
+  .analysis-card h4 { font-size:13px; font-weight:700; color:#e2e8f0; margin-bottom:10px; }
+  .analysis-card li { font-size:12px; color:#64748b; margin-bottom:5px; margin-left:14px; line-height:1.4; }
+  .pro li { color:#22c55e; }
+  .con li { color:#f87171; }
+
+  /* RECOMMENDATION */
+  .recommendation { max-width:820px; margin:24px auto 0; padding:0 24px; }
+  .rec-card { background:linear-gradient(135deg, #1e1440 0%, #131720 100%); border:1.5px solid #a78bfa44; border-radius:18px; padding:28px; }
+  .rec-card h3 { font-size:18px; font-weight:700; color:#f1f5f9; margin-bottom:10px; }
+  .rec-card p, .rec-card li { color:#94a3b8; font-size:13px; line-height:1.7; }
+  .rec-card ul { margin:12px 0 0 18px; }
+  .rec-card li { margin-bottom:7px; }
+
+  /* TABLE */
+  .table-wrap { max-width:820px; margin:0 auto; padding:0 24px; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:9px 12px; color:#475569; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; border-bottom:1.5px solid #1e2535; }
+  td { padding:9px 12px; color:#94a3b8; border-bottom:1px solid #1e2535; vertical-align:top; }
+  td:first-child { color:#e2e8f0; font-weight:500; }
+  tr:hover td { background:#131720; }
+
+  /* NOTE BOX */
+  .note { background: #1a2035; border-left: 3px solid #6366f1; border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 12px; color: #64748b; line-height: 1.5; margin-top: 8px; }
+  .note strong { color: #a5b4fc; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="title">Chat Input Concepts</span>
+  <button class="active" onclick="show('a', this)">A – Chips &amp; Inline</button>
+  <button onclick="show('b', this)">B – Progressive Toolbar</button>
+  <button onclick="show('c', this)">C – Command Panel</button>
+  <button onclick="show('compare', this)">Vergleich &amp; Empfehlung</button>
+</nav>
+
+<!-- ================== SVG ICON DEFS ================== -->
+<!-- All icons are inline SVG, no emoji, compatible with any app renderer -->
+
+<!-- ================== CONCEPT A ================== -->
+<div class="panel active" id="panel-a">
+  <div class="concept-header">
+    <span class="badge minimal">Konzept A</span>
+    <h2>Chips &amp; Inline-Tools</h2>
+    <p>Tool-Chips erscheinen direkt im Eingabefeld. Expand-Button oben rechts im Chat-Fenster. Reasoning mit Aus-Option.</p>
+  </div>
+
+  <div class="demo-area">
+    <div class="chat-mockup">
+
+      <!-- CHAT HEADER WITH EXPAND -->
+      <div class="chat-header">
+        <span class="chat-header-title">Assistent</span>
+      </div>
+
+      <div class="chat-messages">
+        <div class="msg ai">
+          <div class="avatar ai">AI</div>
+          <div class="msg-bubble">Hallo! Aktiviere Tools über die Chips oder schreib einfach los.</div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <!-- TOOL CHIPS -->
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+          <div id="active-tools-a" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"></div>
+          <div class="popover-wrap">
+            <button type="button" class="chip add-tool" onclick="togglePopover('pop-a', this)">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>
+              Tool
+            </button>
+            <div class="tool-popover" id="pop-a">
+              <div class="popover-title">MCP-Tools</div>
+              <div id="tool-list-a"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INPUT WRAP -->
+        <div class="iw">
+          <div class="ta-wrap">
+            <textarea class="ta" id="ta-a" placeholder="Schreib eine Nachricht…" rows="2" style="min-height:44px; max-height:180px; padding-right:32px;" oninput="autoGrow(this); updateSendA()"></textarea>
+            <button class="ta-expand-btn" onclick="expandTa('ta-a', this)" title="Vergrößern">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 11l4-4M8 1l3 3-4 4M9 1h2v2"/></svg>
+            </button>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <!-- File attach -->
+              <div class="tooltip">
+                <button class="icon-sq" onclick="triggerFile()" style="width:28px;height:28px;border-radius:7px;">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8.5l-6 6a4 4 0 0 1-5.66-5.66l6-6a2.5 2.5 0 0 1 3.54 3.54l-6.01 6a1 1 0 0 1-1.41-1.41l5.5-5.5"/></svg>
+                </button>
+                <span class="tooltip-text">Datei anhängen</span>
+              </div>
+              <!-- Reasoning dropdown -->
+              <div class="reason-drop" id="rdrop-a">
+                <button class="reason-trigger" onclick="toggleReasonDrop('rdrop-a')">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg>
+                  <span class="reason-val">Denktiefe: Aus</span>
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4l3 3 3-3"/></svg>
+                </button>
+                <div class="reason-menu" id="rmenu-a">
+                  <div class="reason-option selected" onclick="pickReason('rdrop-a','rmenu-a','Aus',this)"><span class="opt-label">Aus</span><span class="opt-desc">Direkte Antwort</span><svg class="reason-check" width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"><polyline points="2 7 5.5 10.5 12 3"/></svg></div>
+                  <div class="reason-option" onclick="pickReason('rdrop-a','rmenu-a','Schnell',this)"><span class="opt-label">Schnell</span><span class="opt-desc">Kurzer Gedankengang</span><svg class="reason-check" width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"><polyline points="2 7 5.5 10.5 12 3"/></svg></div>
+                  <div class="reason-option" onclick="pickReason('rdrop-a','rmenu-a','Ausgewogen',this)"><span class="opt-label">Ausgewogen</span><span class="opt-desc">Abwägen und antworten</span><svg class="reason-check" width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"><polyline points="2 7 5.5 10.5 12 3"/></svg></div>
+                  <div class="reason-option" onclick="pickReason('rdrop-a','rmenu-a','Gründlich',this)"><span class="opt-label">Gründlich</span><span class="opt-desc">Tiefes Nachdenken</span><svg class="reason-check" width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round"><polyline points="2 7 5.5 10.5 12 3"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <!-- Context + Send in one row, right-aligned inside .iw -->
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="ctx-bar">
+                <div class="ctx-track"><div class="ctx-fill"></div></div>
+                <span>35 %</span>
+              </div>
+              <button class="send-main voice-mode" id="send-a" onclick="handleSendA()">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg>
+                <span id="send-a-label">Sprechen</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"><h3>Interaktionslogik – Konzept A</h3></div>
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <h4>Tool-Picker – Chips</h4>
+        <ul class="pro"><li>Aktive Tools sofort sichtbar</li><li>Chips per X schnell entfernbar</li><li>Popover hält Liste kompakt</li></ul>
+        <ul class="con"><li>Viele Tools → zweite Zeile</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Expand – oben rechts</h4>
+        <ul class="pro"><li>Nicht im Input-Bereich</li><li>Erwarteter Ort (wie modaler Dialog)</li><li>Klar beschriftet: "Vollbild"</li></ul>
+        <ul class="con"><li>Etwas weit weg vom Textfeld</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Reasoning mit Aus</h4>
+        <ul class="pro"><li>Aus = Standard, kein Overhead</li><li>Schnell/Ausgewogen/Gründlich ohne Fachbegriffe</li></ul>
+        <div class="note"><strong>Aus-Zustand:</strong> Modell antwortet direkt, kein Chain-of-Thought</div>
+      </div>
+      <div class="analysis-card">
+        <h4>Senden / Sprechen</h4>
+        <ul><li style="color:#64748b;font-size:12px;margin-left:14px;">Leer → Sprechen-Button. Mit Text → Senden. Ein Button, zwei Zustände.</li></ul>
+        <ul class="pro"><li>Platzsparend</li><li>Kontextsensitiv und logisch</li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================== CONCEPT B ================== -->
+<div class="panel" id="panel-b">
+  <div class="concept-header">
+    <span class="badge progressive">Konzept B</span>
+    <h2>Progressive Toolbar</h2>
+    <p>Sauberes Eingabefeld, darunter eine Aktionsleiste. Tools als Text-Buttons mit Aktiv-State. Denktiefe als schnelle Preset-Chips. Expand im Chat-Header.</p>
+  </div>
+
+  <div class="demo-area">
+    <div class="chat-mockup">
+      <div class="chat-header">
+        <span class="chat-header-title">Assistent</span>
+      </div>
+
+      <div class="chat-messages">
+        <div class="msg ai">
+          <div class="avatar ai">AI</div>
+          <div class="msg-bubble">Bereit! Wähle Tools aus der Toolbar oder schreib direkt los.</div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <!-- TOOL ROW -->
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+          <span style="font-size:11px; color:#475569; font-weight:500; margin-right:2px;">Tools:</span>
+          <div id="tool-row-b" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"></div>
+        </div>
+
+        <!-- TEXTAREA -->
+        <div class="iw" style="border-radius:14px; padding:10px 12px;">
+          <div class="ta-wrap">
+            <textarea class="ta" id="ta-b" placeholder="Was möchtest du wissen oder tun?" rows="3" style="min-height:56px; max-height:200px; padding-right:32px;" oninput="autoGrow(this); updateSendB()"></textarea>
+            <button class="ta-expand-btn" onclick="expandTa('ta-b', this)" title="Vergrößern">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 11l4-4M8 1l3 3-4 4M9 1h2v2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTTOM BAR -->
+        <div style="display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
+          <!-- File -->
+          <div class="tooltip">
+            <button class="icon-sq" onclick="triggerFile()">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8.5l-6 6a4 4 0 0 1-5.66-5.66l6-6a2.5 2.5 0 0 1 3.54 3.54l-6.01 6a1 1 0 0 1-1.41-1.41l5.5-5.5"/></svg>
+            </button>
+            <span class="tooltip-text">Datei anhängen</span>
+          </div>
+
+          <!-- Reasoning presets -->
+          <div class="reason-pills" id="rpills-b">
+            <button class="reason-pill active" onclick="setReasonPresetB('Aus', this)">Aus</button>
+            <button class="reason-pill" onclick="setReasonPresetB('Schnell', this)">Schnell</button>
+            <button class="reason-pill" onclick="setReasonPresetB('Ausgewogen', this)">Ausgewogen</button>
+            <button class="reason-pill" onclick="setReasonPresetB('Gründlich', this)">Gründlich</button>
+          </div>
+
+          <div style="flex:1;"></div>
+
+          <!-- Context segments -->
+          <div class="ctx-bar" style="gap:6px;">
+            <div class="ctx-segs">
+              <div class="ctx-seg u1"></div><div class="ctx-seg u1"></div><div class="ctx-seg u1"></div>
+              <div class="ctx-seg"></div><div class="ctx-seg"></div><div class="ctx-seg"></div><div class="ctx-seg"></div><div class="ctx-seg"></div>
+            </div>
+            <span>3/8 Blöcke</span>
+          </div>
+
+          <!-- Send -->
+          <button class="send-main voice-mode" id="send-b" onclick="handleSendB()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg>
+            <span id="send-b-label">Sprechen</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"><h3>Interaktionslogik – Konzept B</h3></div>
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <h4>Tool-Picker – Toggle-Chips</h4>
+        <ul class="pro"><li>Tools direkt togglebar, kein Popover nötig</li><li>Aktiv-State per Farbe eindeutig</li><li>"Mehr"-Button für Overflow</li></ul>
+        <ul class="con"><li>Bei vielen Tools: Zeile bricht um</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Expand – Chat-Header</h4>
+        <ul class="pro"><li>Klar positioniert oben rechts</li><li>Beschriftung "Vollbild" verständlich</li><li>Folgt bekanntem Chat-App-Muster</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Denktiefe mit Aus</h4>
+        <ul class="pro"><li>Aus als Default → kein unnötiger Rechenaufwand</li><li>Label "Denktiefe" erklärt Funktion ohne KI-Begriff</li></ul>
+        <ul class="con"><li>4 Optionen = leicht voller</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Kontext – Blöcke</h4>
+        <ul><li style="color:#64748b;font-size:12px;margin-left:14px;">"3/8 Blöcke" als nicht-technische Analogie für genutzten Kontext. Kein Token-Begriff.</li></ul>
+        <ul class="pro"><li>Sehr zugänglich</li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================== CONCEPT C ================== -->
+<div class="panel" id="panel-c">
+  <div class="concept-header">
+    <span class="badge command">Konzept C</span>
+    <h2>Command Panel</h2>
+    <p>Strukturiertes Panel: oben Modus-Switch für Denktiefe, mitte Textfeld, unten Aktionsleiste. Expand deutlich oben rechts. Kontext als Ring.</p>
+  </div>
+
+  <div class="demo-area">
+    <div class="chat-mockup">
+      <div class="chat-header">
+        <span class="chat-header-title">Assistent</span>
+      </div>
+
+      <div class="chat-messages">
+        <div class="msg ai">
+          <div class="avatar ai">AI</div>
+          <div class="msg-bubble">Im Modus "Gründlich" arbeite ich langsamer, aber dafür besonders sorgfältig.</div>
+        </div>
+      </div>
+
+      <div class="chat-input-area" style="padding:0;">
+        <!-- TOP BAR: Reasoning mode switch -->
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid #1e2535; background:#0f1420;">
+          <span style="font-size:11px; color:#475569; font-weight:500;">Denktiefe:</span>
+          <div class="reason-switch" id="rswitch-c">
+            <button class="reason-mode-btn active" onclick="setReasonModeC('Aus', this)">Aus</button>
+            <button class="reason-mode-btn" onclick="setReasonModeC('Schnell', this)">Schnell</button>
+            <button class="reason-mode-btn" onclick="setReasonModeC('Fokus', this)">Fokus</button>
+            <button class="reason-mode-btn" onclick="setReasonModeC('Expert', this)">Expert</button>
+            <span class="reason-c-current" id="reason-c-current">Aktiv: Aus</span>
+          </div>
+        </div>
+
+        <!-- TEXTAREA -->
+        <div class="ta-wrap" style="position:relative;">
+          <textarea class="ta" id="ta-c" placeholder="Beschreibe dein Anliegen…" rows="4" style="padding:14px; padding-right:40px; min-height:80px; max-height:260px; display:block; width:100%;" oninput="autoGrow(this)"></textarea>
+          <button class="ta-expand-btn" onclick="expandTa('ta-c', this)" title="Vergrößern" style="top:8px; right:8px;">
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 11l4-4M8 1l3 3-4 4M9 1h2v2"/></svg>
+          </button>
+        </div>
+
+        <!-- BOTTOM BAR -->
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; border-top:1px solid #1e2535; background:#0f1420; flex-wrap:wrap;">
+          <!-- Tools button -->
+          <div class="popover-wrap">
+            <button type="button" class="icon-sq" onclick="togglePopover('pop-c', this)" id="tools-c-btn" data-sticky-open="1" style="width:auto; padding:0 12px; gap:6px; font-size:12px; font-weight:500;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.7 8.3a4.5 4.5 0 1 1-5-5"/><path d="M14 2l-2 2-1.5-1.5L12 1Z"/></svg>
+              Tools
+              <span style="background:#2d3748; padding:1px 6px; border-radius:4px; font-size:10px;" id="tool-count-c">2</span>
+            </button>
+            <div class="tool-popover" id="pop-c">
+              <div class="popover-title">MCP-Tools</div>
+              <div id="tool-list-c"></div>
+            </div>
+          </div>
+
+          <!-- File -->
+          <div class="tooltip">
+            <button class="icon-sq" onclick="triggerFile()" style="width:auto; padding:0 12px; gap:6px; font-size:12px; font-weight:500;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8.5l-6 6a4 4 0 0 1-5.66-5.66l6-6a2.5 2.5 0 0 1 3.54 3.54l-6.01 6a1 1 0 0 1-1.41-1.41l5.5-5.5"/></svg>
+              Anhang
+            </button>
+            <span class="tooltip-text">Datei hochladen</span>
+          </div>
+
+          <div style="flex:1;"></div>
+
+          <!-- Context ring -->
+          <div style="display:flex; align-items:center; gap:7px; color:#475569; font-size:11px;">
+            <svg width="32" height="32" viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r="12" fill="none" stroke="#1e2535" stroke-width="3.5"/>
+              <circle cx="16" cy="16" r="12" fill="none" stroke="#a78bfa" stroke-width="3.5" stroke-dasharray="75.4" stroke-dashoffset="49" stroke-linecap="round" transform="rotate(-90 16 16)"/>
+              <text x="16" y="20" text-anchor="middle" fill="#94a3b8" font-size="7" font-weight="700" font-family="system-ui">35%</text>
+            </svg>
+            <span style="line-height:1.3;">Gedächtnis<br>noch frei</span>
+          </div>
+
+          <!-- Voice separate, always visible -->
+          <div class="tooltip">
+            <button class="icon-sq" onclick="handleVoice()" style="width:36px;height:36px;">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg>
+            </button>
+            <span class="tooltip-text">Sprechen</span>
+          </div>
+
+          <!-- Send always separate -->
+          <button class="send-sq">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4 13 8 9 12"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"><h3>Interaktionslogik – Konzept C</h3></div>
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <h4>Denktiefe + Aus (oben)</h4>
+        <ul class="pro"><li>Auswahl vor dem Schreiben → bewusste Entscheidung</li><li>Aus als Default spart Ressourcen</li></ul>
+        <ul class="con"><li>Etwas mehr visuelle Komplexität</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Tools – Kompakt</h4>
+        <ul class="pro"><li>Ein Button mit Zähler spart Platz</li><li>Ideal wenn viele Tools vorhanden</li></ul>
+        <ul class="con"><li>Weniger Discovery als Chips</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Stimme &amp; Senden getrennt</h4>
+        <ul><li style="color:#64748b;font-size:12px;margin-left:14px;">Mikrofon und Senden immer sichtbar, kein Dual-State. Klarste Lösung für Nutzer die beides wollen.</li></ul>
+        <ul class="pro"><li>Keine Verwirrung</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Kontext-Ring</h4>
+        <ul><li style="color:#64748b;font-size:12px;margin-left:14px;">SVG-Ring zeigt Füllstand visuell. Label "Gedächtnis noch frei" ohne Fachbegriff.</li></ul>
+        <ul class="pro"><li>Elegant, platzsparend</li></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================== COMPARE ================== -->
+<div class="panel" id="panel-compare">
+  <div class="concept-header">
+    <h2>Vergleich &amp; Empfehlung</h2>
+    <p>Gegenüberstellung mit aktualisierter Bewertung nach Nutzerfeedback.</p>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Kriterium</th><th>A – Chips &amp; Inline</th><th>B – Toolbar</th><th>C – Command</th></tr></thead>
+      <tbody>
+        <tr><td>Tool-Sichtbarkeit</td><td>Chips (sehr sichtbar)</td><td>Toggle-Chips (sichtbar)</td><td>Button + Zähler (kompakt)</td></tr>
+        <tr><td>Reasoning Off-Option</td><td>Aus + 3 Stufen ✓</td><td>Aus + 3 Stufen ✓</td><td>Aus + 3 Stufen ✓</td></tr>
+        <tr><td>Expand-Position</td><td>Chat-Header oben rechts ✓</td><td>Chat-Header oben rechts ✓</td><td>Chat-Header oben rechts ✓</td></tr>
+        <tr><td>Icons/Emoji</td><td>SVG-Icons ✓</td><td>SVG-Icons ✓</td><td>SVG-Icons ✓</td></tr>
+        <tr><td>Kontext-Darstellung</td><td>Fortschrittsbalken</td><td>Blöcke (3/8)</td><td>Ring + Label</td></tr>
+        <tr><td>Mikrofon/Senden</td><td>1 Button, kontextsensitiv</td><td>1 Button, kontextsensitiv</td><td>2 Buttons, immer sichtbar</td></tr>
+        <tr><td>Für Einsteiger</td><td>★★★★</td><td>★★★★★</td><td>★★★</td></tr>
+        <tr><td>Für Power-User</td><td>★★★★</td><td>★★★</td><td>★★★★★</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="recommendation" style="margin-top:24px;">
+    <div class="rec-card">
+      <h3>Empfehlung: Konzept B</h3>
+      <p>Nach dem Feedback – kein Expand im Input-Bereich, SVG-Icons, Reasoning mit Off-Option – bleibt <strong>Konzept B (Progressive Toolbar)</strong> die stärkste Wahl:</p>
+      <ul>
+        <li><strong>Expand:</strong> Im Chat-Header oben rechts, als "Vollbild"-Button – konsistent in allen 3 Konzepten umgesetzt. Folgt bekanntem Muster von Notion, Linear, ChatGPT.</li>
+        <li><strong>Icons:</strong> Alle als SVG inline – keine Emoji, kein Plattform-Rendering-Problem. Gleiche Darstellung in jedem Renderer.</li>
+        <li><strong>Reasoning mit Aus:</strong> "Aus" als linke, aktive Default-Option. Nutzer aktivieren Denktiefe bewusst. Stufen: Aus · Schnell · Ausgewogen · Gründlich.</li>
+        <li><strong>Toggle-Chips für Tools:</strong> Kein Popover nötig – Tools sind direkt togglebar, aktive sind farbig hervorgehoben. Einfacher als Icon-only-Buttons.</li>
+        <li><strong>Kontext</strong> als "3/8 Blöcke" – ohne Token-Begriff, zugänglich für alle.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-divider"><h3>Microcopy-Empfehlungen (aktualisiert)</h3></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Element</th><th>Label</th><th>Begründung</th></tr></thead>
+      <tbody>
+        <tr><td>Expand-Button (Header)</td><td>Vollbild</td><td>Universell verständlich, kein technischer Begriff</td></tr>
+        <tr><td>Reasoning – Aus</td><td>Aus</td><td>Klar deaktiviert, kein Overhead</td></tr>
+        <tr><td>Reasoning – Stufe 1</td><td>Schnell</td><td>Positiv, klar</td></tr>
+        <tr><td>Reasoning – Stufe 2</td><td>Ausgewogen</td><td>Neutrales Gleichgewicht</td></tr>
+        <tr><td>Reasoning – Stufe 3</td><td>Gründlich</td><td>Besser als "Deep Thinking" oder "Extended"</td></tr>
+        <tr><td>Denktiefe-Label</td><td>Denktiefe:</td><td>Erklärt Funktion ohne KI-Begriff</td></tr>
+        <tr><td>Kontext-Anzeige</td><td>3/8 Blöcke</td><td>Analogie zu Speicher, kein Token-Begriff</td></tr>
+        <tr><td>Senden (leer)</td><td>Sprechen</td><td>Aktionsorientiert</td></tr>
+        <tr><td>Senden (mit Text)</td><td>Senden</td><td>Universell</td></tr>
+        <tr><td>Datei-Button</td><td>Anhang (Tooltip: "Datei hochladen")</td><td>Kurz + präzise</td></tr>
+        <tr><td>Placeholder</td><td>Was möchtest du wissen oder tun?</td><td>Offen, einladend, handlungsorientiert</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="height:48px;"></div>
+</div>
+
+<script>
+  function show(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, parseInt(el.style.maxHeight || 300)) + 'px';
+  }
+
+  function toolIcon(id, size, color) {
+    const stroke = color || 'currentColor';
+    const s = size || 14;
+    if (id === 'web') return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 2a9 9 0 0 0 0 12M8 2a9 9 0 0 1 0 12M2 8h12"/></svg>`;
+    if (id === 'code') return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 4 1 8 5 12"/><polyline points="11 4 15 8 11 12"/></svg>`;
+    if (id === 'db') return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"><ellipse cx="8" cy="5" rx="5" ry="2.5"/><path d="M3 5v6c0 1.38 2.24 2.5 5 2.5s5-1.12 5-2.5V5"/><path d="M3 8c0 1.38 2.24 2.5 5 2.5s5-1.12 5-2.5"/></svg>`;
+    if (id === 'email') return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="10" rx="2"/><polyline points="2 6 8 9.5 14 6"/></svg>`;
+    if (id === 'jira') return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h4v4H3z"/><path d="M9 9h4v4H9z"/><path d="M7 5h2v2H7z"/><path d="M8 7v2"/><path d="M7 8h2"/></svg>`;
+    if (id === 'github') return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2a5.5 5.5 0 0 0-1.7 10.7V11.2c-2 .5-2.4-1-2.4-1-.3-.8-.8-1- .8-1 .7 0 1.1.7 1.1.7.6 1.1 1.6.8 2 .6.1-.4.3-.8.5-1-1.6-.2-3.3-.8-3.3-3.5 0-.8.3-1.4.7-1.9-.1-.2-.3-.9.1-1.8 0 0 .6-.2 1.9.7a6.4 6.4 0 0 1 3.5 0c1.3-.9 1.9-.7 1.9-.7.4.9.2 1.6.1 1.8.5.5.7 1.1.7 1.9 0 2.7-1.7 3.3-3.3 3.5.3.2.5.7.5 1.4v2.1A5.5 5.5 0 0 0 8 2z"/></svg>`;
+    if (id === 'calendar') return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><line x1="2" y1="6" x2="14" y2="6"/><line x1="5" y1="1.8" x2="5" y2="4.2"/><line x1="11" y1="1.8" x2="11" y2="4.2"/></svg>`;
+    return `<svg width="${s}" height="${s}" viewBox="0 0 16 16" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"><path d="M3 3h10v10H3z"/><path d="M5 6h6M5 9h4"/></svg>`;
+  }
+
+  const TOOL_DEFS = [
+    { id: 'web', label: 'Web-Suche', desc: 'Aktuelle Informationen', iconBg: '#1e2d45', iconColor: '#60a5fa' },
+    { id: 'code', label: 'Code-Runner', desc: 'Python & JS ausf�hren', iconBg: '#1e351e', iconColor: '#4ade80' },
+    { id: 'db', label: 'Datenbank', desc: 'SQL-Abfragen', iconBg: '#35201e', iconColor: '#fb923c' },
+    { id: 'email', label: 'E-Mail', desc: 'Nachrichten senden', iconBg: '#2d1e35', iconColor: '#c084fc' },
+    { id: 'jira', label: 'Jira MCP', desc: 'Tickets lesen & aktualisieren', iconBg: '#1e2d45', iconColor: '#93c5fd' },
+    { id: 'github', label: 'GitHub', desc: 'Repos & Issues', iconBg: '#1f2937', iconColor: '#e2e8f0' },
+    { id: 'calendar', label: 'Kalender', desc: 'Termine planen', iconBg: '#2d1e35', iconColor: '#f9a8d4' },
+    { id: 'docs', label: 'Docs', desc: 'Interne Wissensbasis', iconBg: '#1e351e', iconColor: '#86efac' }
+  ];
+
+  const TOOL_STATE = {
+    a: new Set(['web', 'code']),
+    b: new Set(['web']),
+    c: new Set(['web', 'code'])
+  };
+
+  function togglePopover(id, trigger) {
+    const p = document.getElementById(id);
+    if (!p) return;
+    const wrap = trigger ? trigger.closest('.popover-wrap') : p.parentElement;
+    const isOpen = p.style.display === 'block' || p.classList.contains('open');
+    const stickyOpen = !!(trigger && trigger.dataset && trigger.dataset.stickyOpen === '1');
+    if (isOpen && stickyOpen) return;
+    const shouldOpen = !isOpen;
+    document.querySelectorAll('.tool-popover').forEach(pop => {
+      pop.classList.remove('open');
+      pop.style.display = 'none';
+      if (pop.parentElement) pop.parentElement.classList.remove('open');
+    });
+    if (!shouldOpen) return;
+    p.classList.add('open');
+    p.style.display = 'block';
+    if (wrap) wrap.classList.add('open');
+    setTimeout(() => {
+      document.addEventListener('click', function closer(e) {
+        if (wrap && wrap.contains(e.target)) return;
+        if (!p.contains(e.target)) {
+          p.classList.remove('open');
+          p.style.display = 'none';
+          if (wrap) wrap.classList.remove('open');
+          document.removeEventListener('click', closer);
+        }
+      });
+    }, 10);
+  }
+
+  function toggleTool(concept, toolId) {
+    const set = TOOL_STATE[concept];
+    if (!set) return;
+    if (set.has(toolId)) set.delete(toolId);
+    else set.add(toolId);
+    renderTools(concept);
+  }
+
+  function renderToolPopoverList(targetId, concept) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    target.innerHTML = '';
+    TOOL_DEFS.forEach(tool => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'tool-item';
+      if (TOOL_STATE[concept].has(tool.id)) item.classList.add('selected');
+      item.onclick = function () { toggleTool(concept, tool.id); };
+      item.innerHTML = `
+        <div class="tool-icon" style="background:${tool.iconBg};">
+          ${toolIcon(tool.id, 16, tool.iconColor)}
+        </div>
+        <div class="tool-info">
+          <div class="tool-name">${tool.label}</div>
+          <div class="tool-desc">${tool.desc}</div>
+        </div>
+        <svg class="tool-check" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linecap="round"><polyline points="3 8 6.5 11.5 13 4"/></svg>
+      `;
+      target.appendChild(item);
+    });
+  }
+
+  function renderToolsA() {
+    const wrap = document.getElementById('active-tools-a');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    TOOL_DEFS.forEach(tool => {
+      if (!TOOL_STATE.a.has(tool.id)) return;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip tool';
+      chip.onclick = function () { toggleTool('a', tool.id); };
+      chip.innerHTML = `
+        ${toolIcon(tool.id, 11, 'currentColor')}
+        ${tool.label}
+        <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg>
+      `;
+      wrap.appendChild(chip);
+    });
+    renderToolPopoverList('tool-list-a', 'a');
+  }
+
+  function renderToolsB() {
+    const row = document.getElementById('tool-row-b');
+    if (!row) return;
+    row.innerHTML = '';
+    TOOL_DEFS.forEach(tool => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const active = TOOL_STATE.b.has(tool.id);
+      btn.className = 'chip tool' + (active ? '' : ' inactive');
+      btn.onclick = function () { toggleTool('b', tool.id); };
+      btn.innerHTML = `${toolIcon(tool.id, 11, 'currentColor')}${tool.label}`;
+      row.appendChild(btn);
+    });
+  }
+
+  function renderToolsC() {
+    const count = document.getElementById('tool-count-c');
+    const btn = document.getElementById('tools-c-btn');
+    if (count && btn) {
+      const activeCount = TOOL_STATE.c.size;
+      count.textContent = String(activeCount);
+      count.style.background = activeCount > 0 ? '#4f46e5' : '#2d3748';
+      btn.classList.toggle('active', activeCount > 0);
+    }
+    renderToolPopoverList('tool-list-c', 'c');
+  }
+
+  function renderTools(concept) {
+    if (concept === 'a') renderToolsA();
+    if (concept === 'b') renderToolsB();
+    if (concept === 'c') renderToolsC();
+  }
+
+  function initTools() {
+    renderToolsA();
+    renderToolsB();
+    renderToolsC();
+  }
+
+  function toggleReasonDrop(dropId) {
+    const drop = document.getElementById(dropId);
+    const menu = drop.querySelector('.reason-menu');
+    const trigger = drop.querySelector('.reason-trigger');
+    const isOpen = menu.classList.contains('open');
+    document.querySelectorAll('.reason-menu').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.reason-trigger').forEach(t => t.classList.remove('open'));
+    if (!isOpen) {
+      menu.classList.add('open');
+      trigger.classList.add('open');
+      setTimeout(() => {
+        document.addEventListener('click', function closer(e) {
+          if (!drop.contains(e.target)) {
+            menu.classList.remove('open');
+            trigger.classList.remove('open');
+            document.removeEventListener('click', closer);
+          }
+        });
+      }, 10);
+    }
+  }
+
+  function pickReason(dropId, menuId, value, opt) {
+    const drop = document.getElementById(dropId);
+    const menu = document.getElementById(menuId);
+    const trigger = drop.querySelector('.reason-trigger');
+    const val = drop.querySelector('.reason-val');
+    menu.querySelectorAll('.reason-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    const prefix = dropId === 'rdrop-c' ? '' : 'Denktiefe: ';
+    val.textContent = prefix + value;
+    if (value !== 'Aus') trigger.classList.add('has-value');
+    else trigger.classList.remove('has-value');
+    menu.classList.remove('open');
+    trigger.classList.remove('open');
+  }
+
+  function setReasonPresetB(value, btn) {
+    const wrap = document.getElementById('rpills-b');
+    if (!wrap) return;
+    wrap.querySelectorAll('.reason-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function setReasonModeC(value, btn) {
+    const wrap = document.getElementById('rswitch-c');
+    if (!wrap) return;
+    wrap.querySelectorAll('.reason-mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const current = document.getElementById('reason-c-current');
+    if (current) current.textContent = 'Aktiv: ' + value;
+  }
+
+  function expandTa(taId, btn) {
+    const ta = document.getElementById(taId);
+    const expanded = btn.classList.contains('expanded');
+    if (expanded) {
+      ta.style.maxHeight = taId === 'ta-c' ? '260px' : '200px';
+      ta.style.height = 'auto';
+      btn.classList.remove('expanded');
+      btn.title = 'Vergrößern';
+      btn.innerHTML = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 11l4-4M8 1l3 3-4 4M9 1h2v2"/></svg>`;
+    } else {
+      ta.style.maxHeight = '480px';
+      ta.style.height = '320px';
+      btn.classList.add('expanded');
+      btn.title = 'Verkleinern';
+      btn.innerHTML = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 1l-4 4M2 9l2 2 4-4M1 10h2V8"/></svg>`;
+    }
+  }
+
+  function updateSendA() {
+    const t = document.getElementById('ta-a').value.trim();
+    const btn = document.getElementById('send-a');
+    const lbl = document.getElementById('send-a-label');
+    if (t) {
+      btn.classList.remove('voice-mode');
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4 13 8 9 12"/></svg><span id="send-a-label">Senden</span>`;
+    } else {
+      btn.classList.add('voice-mode');
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg><span id="send-a-label">Sprechen</span>`;
+    }
+  }
+
+  function updateSendB() {
+    const t = document.getElementById('ta-b').value.trim();
+    const btn = document.getElementById('send-b');
+    const lbl = document.getElementById('send-b-label');
+    if (t) {
+      btn.classList.remove('voice-mode');
+      lbl.textContent = 'Senden';
+      btn.querySelector('svg').innerHTML = `<line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4 13 8 9 12"/>`;
+      btn.querySelector('svg').setAttribute('stroke-width','2.2');
+    } else {
+      btn.classList.add('voice-mode');
+      lbl.textContent = 'Sprechen';
+      btn.querySelector('svg').innerHTML = `<path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/>`;
+    }
+  }
+
+  function handleSendA() {
+    const t = document.getElementById('ta-a').value.trim();
+    if (!t) handleVoice();
+  }
+
+  function handleSendB() {
+    const t = document.getElementById('ta-b').value.trim();
+    if (!t) handleVoice();
+  }
+
+  function handleVoice() {
+    alert('Spracherkennung würde hier gestartet…');
+  }
+
+  function toggleExpand(concept) {
+    const btn = document.getElementById('expand-btn-' + concept);
+    const isExpanded = btn.dataset.expanded === '1';
+    if (isExpanded) {
+      btn.dataset.expanded = '0';
+      btn.querySelector('svg').innerHTML = '<path d="M3 8h10M8 3v10"/>';
+      btn.childNodes[btn.childNodes.length - 1].textContent = 'Vollbild';
+    } else {
+      btn.dataset.expanded = '1';
+      btn.querySelector('svg').innerHTML = '<polyline points="4 3 3 3 3 13 13 13 13 12"/><line x1="10" y1="6" x2="14" y2="2"/><polyline points="9 2 14 2 14 7"/>';
+      btn.childNodes[btn.childNodes.length - 1].textContent = ' Verkleinern';
+    }
+  }
+
+  function triggerFile() {
+    alert('Datei-Upload-Dialog würde hier geöffnet…');
+  }
+
+  initTools();
+</script>
+</body>
+</html>
+
+

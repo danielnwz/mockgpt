@@ -9,90 +9,83 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { VersionNotes } from './components/VersionNotes';
 import { SecureModeIntroModal } from './components/SecureModeIntroModal';
+import { ChatInputConceptsPage } from './components/ChatInputConceptsPage';
 import { Assistant, Chat, Message } from './types';
 import { getRecommendedAssistants, getCommunityAssistants, getOwnedAssistants, getSubscribedAssistants } from './data/assistants';
 import { findLLMModelById, getFallbackLLMModelId } from './data/llmModels';
 import { LanguageProvider } from './contexts/LanguageContext';
 
-type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version';
+type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version' | 'chat-input-concepts';
 
 const getDefaultSubscribedIds = (): string[] =>
-  getSubscribedAssistants().map((assistant) => assistant.id);
+  [
+    ...getSubscribedAssistants(),
+    ...getRecommendedAssistants().slice(0, 5),
+    ...getCommunityAssistants()
+      .filter((assistant) => !assistant.deletedByOwner)
+      .slice(0, 7),
+  ].map((assistant) => assistant.id);
 
 const createMockChats = (subscribedAssistantIds: string[]): Chat[] => {
   if (subscribedAssistantIds.length === 0) return [];
 
-  const primaryAssistantId = subscribedAssistantIds[0];
-  const secondaryAssistantId = subscribedAssistantIds[1] ?? primaryAssistantId;
+  const templates = [
+    ['Tax deadline checklist', 'What documents should I collect before filing my tax return?', 'Start with income statements, deductible expense receipts, and insurance contribution records.'],
+    ['SEO title ideas', 'Give me 5 SEO-friendly title options for a React performance guide.', 'I can provide options centered on Core Web Vitals, bundle size, and measurable speed gains.'],
+    ['Expense category review', 'Can commuting costs and home office equipment be claimed together?', 'Usually yes as separate categories, if each has valid documentation and meets limits.'],
+    ['Article keyword clustering', 'Cluster these keywords into 3 topic groups for one blog series.', 'I will group them by search intent so each article targets one primary intent.'],
+    ['Freelance invoice wording', 'Draft a cleaner invoice note for late payment reminders.', 'Use clear due dates, payment methods, and a polite escalation timeline.'],
+    ['VAT quick check', 'Do I need to add VAT for this digital consulting service?', 'That depends on buyer location and B2B/B2C status; I can map your case quickly.'],
+    ['Landing page meta tags', 'Write a title + meta description for a SaaS analytics page.', 'I will keep the title concise and add a benefit-focused description with action wording.'],
+    ['Quarterly tax estimate', 'How should I estimate my quarterly prepayments?', 'Use prior-year totals, adjust for expected income shifts, and track variance monthly.'],
+    ['Internal link opportunities', 'Suggest internal links for a post about React memoization.', 'Link to rendering basics, profiling guides, and state management content.'],
+    ['Receipt categorization', 'Classify these receipts into deductible and non-deductible buckets.', 'I can categorize by business purpose and flag ambiguous items for review.'],
+    ['Backlink outreach draft', 'Write a short backlink outreach email for a technical case study.', 'I will keep it short, personalized, and focused on evidence-based value.'],
+    ['Business trip deduction', 'What can I deduct from a two-day business trip?', 'Typical categories include transport, accommodation, meal rules, and trip-related fees.'],
+    ['Content refresh plan', 'Create a 30-day refresh plan for old blog posts.', 'I will prioritize high-impression pages first, then optimize CTR and intent match.'],
+    ['Home office allocation', 'How do I split rent and utilities for home office use?', 'Apply a consistent area-based method and retain supporting calculations.'],
+    ['SERP competitor summary', 'Summarize what top 5 pages do better than ours.', 'I can compare structure, topical depth, and intent coverage to identify gaps.'],
+    ['Mileage log template', 'Create a simple mileage log format I can use weekly.', 'I will provide a compact template with date, route, purpose, and distance fields.'],
+    ['Title tag cleanup', 'Which pages have title tags that are too long?', 'I can list candidates and suggest concise replacements under common pixel limits.'],
+    ['Depreciation question', 'Can I depreciate a new laptop bought mid-year?', 'Yes in many cases; method and first-year amount depend on local tax rules.'],
+    ['Keyword cannibalization', 'I think two posts target the same keyword. What now?', 'We can merge, redirect, or differentiate intent and headings to reduce overlap.'],
+    ['Client meal deduction', 'How much of a client dinner can usually be deducted?', 'A reduced deductible percentage often applies, with documentation requirements.'],
+    ['Schema markup review', 'Check if FAQ schema makes sense for this product page.', 'Use FAQ schema only when visible Q&A exists and matches page intent.'],
+    ['Deduction deadline', 'What is the deadline to submit missing receipts?', 'Best practice is immediate filing support, but formal windows vary by authority.'],
+    ['Blog brief generator', 'Generate a brief for an article on React suspense patterns.', 'I will include angle, target reader, outline, and references to avoid fluff.'],
+    ['Tax office reply draft', 'Draft a response to a tax office request for clarification.', 'Keep it factual, point-by-point, and attach evidence in the same order as questions.'],
+  ] as const;
 
-  return [
-    {
-      id: 'mock-chat-1',
-      title: 'Tax deadline checklist',
-      assistantId: primaryAssistantId,
+  const baseTimestamp = new Date('2026-03-11T18:00:00.000Z').getTime();
+
+  return templates.map(([title, userContent, assistantContent], index) => {
+    const assistantId = subscribedAssistantIds[index % subscribedAssistantIds.length];
+    const createdAtMs = baseTimestamp - index * 1000 * 60 * 38;
+    const updatedAtMs = createdAtMs + 1000 * 22;
+
+    return {
+      id: `mock-chat-${index + 1}`,
+      title,
+      assistantId,
       messages: [
         {
-          id: 'mock-chat-1-user-1',
+          id: `mock-chat-${index + 1}-user-1`,
           role: 'user',
-          content: 'What documents should I collect before filing my tax return?',
-          timestamp: '2026-03-09T08:13:00.000Z',
+          content: userContent,
+          timestamp: new Date(createdAtMs).toISOString(),
         },
         {
-          id: 'mock-chat-1-assistant-1',
+          id: `mock-chat-${index + 1}-assistant-1`,
           role: 'assistant',
-          content: 'Start with income statements, deductible expense receipts, and insurance contributions. I can help you turn that into a filing checklist.',
-          timestamp: '2026-03-09T08:13:20.000Z',
+          content: assistantContent,
+          timestamp: new Date(updatedAtMs).toISOString(),
         },
       ],
-      createdAt: '2026-03-09T08:13:00.000Z',
-      updatedAt: '2026-03-09T08:13:20.000Z',
+      createdAt: new Date(createdAtMs).toISOString(),
+      updatedAt: new Date(updatedAtMs).toISOString(),
       llmModel: 'gpt-4.1-mini',
-    },
-    {
-      id: 'mock-chat-2',
-      title: 'SEO title ideas',
-      assistantId: secondaryAssistantId,
-      messages: [
-        {
-          id: 'mock-chat-2-user-1',
-          role: 'user',
-          content: 'Give me 5 SEO-friendly title options for a React performance guide.',
-          timestamp: '2026-03-10T11:02:00.000Z',
-        },
-        {
-          id: 'mock-chat-2-assistant-1',
-          role: 'assistant',
-          content: 'Sure. I can propose options focused on Core Web Vitals, render optimization, and measurable speed improvements.',
-          timestamp: '2026-03-10T11:02:22.000Z',
-        },
-      ],
-      createdAt: '2026-03-10T11:02:00.000Z',
-      updatedAt: '2026-03-10T11:02:22.000Z',
-      llmModel: 'gpt-4.1-mini',
-    },
-    {
-      id: 'mock-chat-3',
-      title: 'Expense category review',
-      assistantId: primaryAssistantId,
-      messages: [
-        {
-          id: 'mock-chat-3-user-1',
-          role: 'user',
-          content: 'Can commuting costs and home office equipment be claimed together?',
-          timestamp: '2026-03-11T07:45:00.000Z',
-        },
-        {
-          id: 'mock-chat-3-assistant-1',
-          role: 'assistant',
-          content: 'Yes, potentially. They are usually separate categories, so we should calculate each one with the right evidence and limits.',
-          timestamp: '2026-03-11T07:45:25.000Z',
-        },
-      ],
-      createdAt: '2026-03-11T07:45:00.000Z',
-      updatedAt: '2026-03-11T07:45:25.000Z',
-      llmModel: 'gpt-4.1-mini',
-    },
-  ];
+    };
+  });
 };
 
 export default function App() {
@@ -117,19 +110,15 @@ export default function App() {
     return mockAssistants;
   });
   const [chats, setChats] = useState<Chat[]>(() => {
-    const savedChats = localStorage.getItem('chats');
-    if (savedChats) return JSON.parse(savedChats);
-
     const savedSubscribed = localStorage.getItem('subscribedAssistants');
     const initialSubscribedIds = savedSubscribed ? JSON.parse(savedSubscribed) : getDefaultSubscribedIds();
     return createMockChats(initialSubscribedIds);
   });
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
   const [editingAssistant, setEditingAssistant] = useState<Assistant | null>(null);
-  const [subscribedIds, setSubscribedIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('subscribedAssistants');
-    return saved ? JSON.parse(saved) : getDefaultSubscribedIds();
-  });
+  const [subscribedIds, setSubscribedIds] = useState<string[]>(() =>
+    getDefaultSubscribedIds()
+  );
 
   const [privateMode, setPrivateMode] = useState(false);
 
@@ -142,12 +131,27 @@ export default function App() {
     const syncViewWithPath = () => {
       if (window.location.pathname === '/version') {
         setCurrentView('version');
+        return;
+      }
+      if (window.location.pathname === '/chat-input-concepts') {
+        setCurrentView('chat-input-concepts');
       }
     };
 
     syncViewWithPath();
     window.addEventListener('popstate', syncViewWithPath);
     return () => window.removeEventListener('popstate', syncViewWithPath);
+  }, []);
+
+  useEffect(() => {
+    const seededSubscribedIds = getDefaultSubscribedIds();
+    setSubscribedIds(seededSubscribedIds);
+    localStorage.setItem('subscribedAssistants', JSON.stringify(seededSubscribedIds));
+
+    const seededChats = createMockChats(seededSubscribedIds);
+    setChats(seededChats);
+    setCurrentChat(null);
+    localStorage.setItem('chats', JSON.stringify(seededChats));
   }, []);
 
   const handleAcceptTerms = () => {
@@ -519,6 +523,10 @@ export default function App() {
 
               {currentView === 'version' && (
                 <VersionNotes onBack={navigateHome} />
+              )}
+
+              {currentView === 'chat-input-concepts' && (
+                <ChatInputConceptsPage />
               )}
             </main>
           </div>

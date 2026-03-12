@@ -17,7 +17,7 @@ import { Chat, Assistant } from '../types';
 import { useState } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 
-type View = 'home' | 'chat' | 'discovery' | 'editor' | 'assistants' | 'version';
+type View = 'home' | 'chat' | 'discovery' | 'editor' | 'assistants' | 'version' | 'chat-input-concepts';
 
 interface SidebarProps {
   collapsed: boolean;
