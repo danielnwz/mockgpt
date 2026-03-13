@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Check,
   Ellipsis,
+  Mic,
   X,
   Plus,
   Search,
@@ -199,6 +200,7 @@ export function ChatWindow({
     () => reasoningOptions.find((option) => option.value === reasoningLevel)?.label || reasoningOptions[0].label,
     [reasoningLevel, reasoningOptions]
   );
+  const hasTypedInput = input.trim().length > 0;
   const contextWindow = useMemo(() => {
     const maxTokens = selectedModel?.maxInput || 1;
     const textParts = [
@@ -1059,12 +1061,15 @@ export function ChatWindow({
                   </Popover>
 
                 <button
-                  type="submit"
-                  disabled={!input.trim()}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  type={hasTypedInput ? 'submit' : 'button'}
+                  className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors ${hasTypedInput
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'border border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  title={hasTypedInput ? t('send') : 'Voice input'}
                 >
-                  <Send className="h-4 w-4" />
-                  <span>{t('send')}</span>
+                  {hasTypedInput ? <Send className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  <span>{hasTypedInput ? t('send') : 'Speak'}</span>
                 </button>
               </div>
             </div>
