@@ -17,6 +17,18 @@ import { LanguageProvider } from './contexts/LanguageContext';
 
 type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version' | 'chat-input-concepts';
 
+const normalizePathname = (pathname: string) =>
+  pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
+
+const routeMatches = (pathname: string, route: string) =>
+  normalizePathname(pathname).endsWith(route);
+
+const appPath = (route: '/' | '/version' | '/chat-input-concepts') => {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  if (route === '/') return base ? `${base}/` : '/';
+  return `${base}${route}`;
+};
+
 const getDefaultSubscribedIds = (): string[] =>
   [
     ...getSubscribedAssistants(),
@@ -129,13 +141,16 @@ export default function App() {
     }
 
     const syncViewWithPath = () => {
-      if (window.location.pathname === '/version') {
+      const pathname = window.location.pathname;
+      if (routeMatches(pathname, '/version')) {
         setCurrentView('version');
         return;
       }
-      if (window.location.pathname === '/chat-input-concepts') {
+      if (routeMatches(pathname, '/chat-input-concepts')) {
         setCurrentView('chat-input-concepts');
+        return;
       }
+      setCurrentView('home');
     };
 
     syncViewWithPath();
@@ -160,12 +175,12 @@ export default function App() {
   };
 
   const navigateToVersion = () => {
-    window.history.pushState({}, '', '/version');
+    window.history.pushState({}, '', appPath('/version'));
     setCurrentView('version');
   };
 
   const navigateHome = () => {
-    window.history.pushState({}, '', '/');
+    window.history.pushState({}, '', appPath('/'));
     setCurrentView('home');
   };
 

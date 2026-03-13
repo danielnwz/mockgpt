@@ -38,8 +38,19 @@
   const TOOL_STATE = {
     a: new Set(['web', 'code']),
     b: new Set(['web']),
-    c: new Set(['web', 'code'])
+    c: new Set(['web', 'code']),
+    d: new Set(['web', 'jira', 'docs'])
   };
+
+  const TOOL_PACKS = {
+    starter: ['web', 'docs', 'jira'],
+    dev: ['code', 'github', 'docs'],
+    ops: ['jira', 'calendar', 'email'],
+    data: ['db', 'web', 'docs'],
+    custom: ['web', 'jira', 'docs']
+  };
+
+  let PACK_DRAFT_D = new Set(TOOL_PACKS.custom);
 
   function togglePopover(id, trigger) {
     const p = document.getElementById(id);
@@ -150,16 +161,81 @@
     renderToolPopoverList('tool-list-c', 'c');
   }
 
+  function renderToolsD() {
+    const wrap = document.getElementById('active-tools-d');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    TOOL_DEFS.forEach(tool => {
+      if (!TOOL_STATE.d.has(tool.id)) return;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip tool';
+      chip.onclick = function () { toggleTool('d', tool.id); };
+      chip.innerHTML = `
+        ${toolIcon(tool.id, 11, 'currentColor')}
+        ${tool.label}
+        <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg>
+      `;
+      wrap.appendChild(chip);
+    });
+    renderToolPopoverList('tool-list-d', 'd');
+  }
+
+  function applyToolPack(concept, packId) {
+    const tools = TOOL_PACKS[packId];
+    if (!tools || !TOOL_STATE[concept]) return;
+    TOOL_STATE[concept] = new Set(tools);
+    if (concept === 'd') {
+      PACK_DRAFT_D = new Set(TOOL_STATE.d);
+      renderPackEditorD();
+    }
+    renderTools(concept);
+  }
+
+  function renderPackEditorD() {
+    const target = document.getElementById('pack-edit-d');
+    if (!target) return;
+    target.innerHTML = '';
+    TOOL_DEFS.forEach(tool => {
+      const row = document.createElement('label');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.gap = '6px';
+      row.style.fontSize = '12px';
+      row.style.color = '#94a3b8';
+      const checked = PACK_DRAFT_D.has(tool.id) ? 'checked' : '';
+      row.innerHTML = `<input type="checkbox" ${checked} onchange="togglePackDraftD('${tool.id}', this.checked)"> <span>${tool.label}</span>`;
+      target.appendChild(row);
+    });
+  }
+
+  function togglePackDraftD(toolId, checked) {
+    if (checked) PACK_DRAFT_D.add(toolId);
+    else PACK_DRAFT_D.delete(toolId);
+  }
+
+  function saveCustomPackD() {
+    TOOL_PACKS.custom = Array.from(PACK_DRAFT_D);
+    const nameEl = document.getElementById('pack-name-d');
+    const label = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : 'Mein Koffer';
+    const titleEl = document.getElementById('pack-custom-label-d');
+    if (titleEl) titleEl.textContent = label;
+    applyToolPack('d', 'custom');
+  }
+
   function renderTools(concept) {
     if (concept === 'a') renderToolsA();
     if (concept === 'b') renderToolsB();
     if (concept === 'c') renderToolsC();
+    if (concept === 'd') renderToolsD();
   }
 
   function initTools() {
     renderToolsA();
     renderToolsB();
     renderToolsC();
+    renderToolsD();
+    renderPackEditorD();
   }
 
   function toggleReasonDrop(dropId) {
@@ -215,6 +291,16 @@
     if (current) current.textContent = 'Aktiv: ' + value;
   }
 
+  function setReasonSliderD(rawValue) {
+    const value = Number(rawValue);
+    let label = 'Aus';
+    if (value >= 20 && value < 45) label = 'Schnell';
+    else if (value >= 45 && value < 75) label = 'Ausgewogen';
+    else if (value >= 75) label = 'Tief';
+    const out = document.getElementById('reason-d-label');
+    if (out) out.textContent = `${label} · ${Math.round(value)}%`;
+  }
+
   function expandTa(taId, btn) {
     const ta = document.getElementById(taId);
     const expanded = btn.classList.contains('expanded');
@@ -262,6 +348,18 @@
     }
   }
 
+  function updateSendD() {
+    const t = document.getElementById('ta-d').value.trim();
+    const btn = document.getElementById('send-d');
+    if (t) {
+      btn.classList.remove('voice-mode');
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4 13 8 9 12"/></svg><span id="send-d-label">Senden</span>`;
+    } else {
+      btn.classList.add('voice-mode');
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg><span id="send-d-label">Sprechen</span>`;
+    }
+  }
+
   function handleSendA() {
     const t = document.getElementById('ta-a').value.trim();
     if (!t) handleVoice();
@@ -269,6 +367,11 @@
 
   function handleSendB() {
     const t = document.getElementById('ta-b').value.trim();
+    if (!t) handleVoice();
+  }
+
+  function handleSendD() {
+    const t = document.getElementById('ta-d').value.trim();
     if (!t) handleVoice();
   }
 

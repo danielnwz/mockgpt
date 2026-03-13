@@ -25,6 +25,7 @@
   .badge.minimal { background: #1e2535; color: #6366f1; }
   .badge.progressive { background: #1e2535; color: #22d3ee; }
   .badge.command { background: #1e2535; color: #a78bfa; }
+  .badge.hybrid { background: #1e2535; color: #f59e0b; }
 
   /* DEMO AREA */
   .demo-area { max-width: 820px; margin: 0 auto; padding: 0 24px; }
@@ -112,6 +113,8 @@
   .reason-mode-btn:hover { border-color: #4f46e5; color: #a78bfa; }
   .reason-mode-btn.active { border-color: #22d3ee66; color: #22d3ee; background: #0c2832; }
   .reason-c-current { font-size: 11px; color: #64748b; margin-left: 4px; }
+  .spec-range { width: 100%; accent-color: #6366f1; }
+  .spec-scale { display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:6px; }
 
   /* TEXTAREA WRAP WITH EXPAND BTN */
   .ta-wrap { position: relative; }
@@ -185,7 +188,7 @@
   <button class="active" onclick="show('a', this)">A – Chips &amp; Inline</button>
   <button onclick="show('b', this)">B – Progressive Toolbar</button>
   <button onclick="show('c', this)">C – Command Panel</button>
-  <button onclick="show('compare', this)">Vergleich &amp; Empfehlung</button>
+  <button onclick="show('d', this)">D – Spectrum Hybrid</button>
 </nav>
 
 <!-- ================== SVG ICON DEFS ================== -->
@@ -196,13 +199,13 @@
   <div class="concept-header">
     <span class="badge minimal">Konzept A</span>
     <h2>Chips &amp; Inline-Tools</h2>
-    <p>Tool-Chips erscheinen direkt im Eingabefeld. Expand-Button oben rechts im Chat-Fenster. Reasoning mit Aus-Option.</p>
+    <p>Tool-Chips erscheinen direkt im Eingabefeld. Hinzufügen über + Tool mit Popover. Denktiefe als Dropdown mit Aus-Option.</p>
   </div>
 
   <div class="demo-area">
     <div class="chat-mockup">
 
-      <!-- CHAT HEADER WITH EXPAND -->
+      <!-- CHAT HEADER -->
       <div class="chat-header">
         <span class="chat-header-title">Assistent</span>
       </div>
@@ -286,9 +289,9 @@
         <ul class="con"><li>Viele Tools → zweite Zeile</li></ul>
       </div>
       <div class="analysis-card">
-        <h4>Expand – oben rechts</h4>
-        <ul class="pro"><li>Nicht im Input-Bereich</li><li>Erwarteter Ort (wie modaler Dialog)</li><li>Klar beschriftet: "Vollbild"</li></ul>
-        <ul class="con"><li>Etwas weit weg vom Textfeld</li></ul>
+        <h4>Header – reduziert</h4>
+        <ul class="pro"><li>Keine zusätzliche Aktion im Header</li><li>Mehr Fokus auf Eingabe und Tools</li></ul>
+        <ul class="con"><li>Keine schnelle Layout-Umschaltung</li></ul>
       </div>
       <div class="analysis-card">
         <h4>Reasoning mit Aus</h4>
@@ -309,7 +312,7 @@
   <div class="concept-header">
     <span class="badge progressive">Konzept B</span>
     <h2>Progressive Toolbar</h2>
-    <p>Sauberes Eingabefeld, darunter eine Aktionsleiste. Tools als Text-Buttons mit Aktiv-State. Denktiefe als schnelle Preset-Chips. Expand im Chat-Header.</p>
+    <p>Sauberes Eingabefeld, darunter eine Aktionsleiste. Tools als Text-Buttons mit Aktiv-State. Denktiefe als schnelle Preset-Chips.</p>
   </div>
 
   <div class="demo-area">
@@ -384,12 +387,12 @@
     <div class="analysis-grid">
       <div class="analysis-card">
         <h4>Tool-Picker – Toggle-Chips</h4>
-        <ul class="pro"><li>Tools direkt togglebar, kein Popover nötig</li><li>Aktiv-State per Farbe eindeutig</li><li>"Mehr"-Button für Overflow</li></ul>
+        <ul class="pro"><li>Tools direkt togglebar, kein Popover nötig</li><li>Aktiv-State per Farbe eindeutig</li><li>Alle 8 Tools sofort sichtbar</li></ul>
         <ul class="con"><li>Bei vielen Tools: Zeile bricht um</li></ul>
       </div>
       <div class="analysis-card">
-        <h4>Expand – Chat-Header</h4>
-        <ul class="pro"><li>Klar positioniert oben rechts</li><li>Beschriftung "Vollbild" verständlich</li><li>Folgt bekanntem Chat-App-Muster</li></ul>
+        <h4>Header – reduziert</h4>
+        <ul class="pro"><li>Ruhiger Kopfbereich</li><li>Fokus auf Toolbar unter dem Input</li></ul>
       </div>
       <div class="analysis-card">
         <h4>Denktiefe mit Aus</h4>
@@ -410,7 +413,7 @@
   <div class="concept-header">
     <span class="badge command">Konzept C</span>
     <h2>Command Panel</h2>
-    <p>Strukturiertes Panel: oben Modus-Switch für Denktiefe, mitte Textfeld, unten Aktionsleiste. Expand deutlich oben rechts. Kontext als Ring.</p>
+    <p>Strukturiertes Panel: oben Modus-Switch für Denktiefe, mitte Textfeld, unten Aktionsleiste. Tools kompakt als Button mit Popover. Kontext als Ring.</p>
   </div>
 
   <div class="demo-area">
@@ -525,63 +528,118 @@
   </div>
 </div>
 
-<!-- ================== COMPARE ================== -->
-<div class="panel" id="panel-compare">
+<!-- ================== CONCEPT D ================== -->
+<div class="panel" id="panel-d">
   <div class="concept-header">
-    <h2>Vergleich &amp; Empfehlung</h2>
-    <p>Gegenüberstellung mit aktualisierter Bewertung nach Nutzerfeedback.</p>
+    <span class="badge hybrid">Konzept D</span>
+    <h2>Spectrum Hybrid</h2>
+    <p>Tool-Chips wie A mit zusätzlichem Werkzeugkoffer. Denktiefe als echtes Spektrum im Popover, rechtsbündig unten neben dem Senden-Button.</p>
   </div>
 
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Kriterium</th><th>A – Chips &amp; Inline</th><th>B – Toolbar</th><th>C – Command</th></tr></thead>
-      <tbody>
-        <tr><td>Tool-Sichtbarkeit</td><td>Chips (sehr sichtbar)</td><td>Toggle-Chips (sichtbar)</td><td>Button + Zähler (kompakt)</td></tr>
-        <tr><td>Reasoning Off-Option</td><td>Aus + 3 Stufen ✓</td><td>Aus + 3 Stufen ✓</td><td>Aus + 3 Stufen ✓</td></tr>
-        <tr><td>Expand-Position</td><td>Chat-Header oben rechts ✓</td><td>Chat-Header oben rechts ✓</td><td>Chat-Header oben rechts ✓</td></tr>
-        <tr><td>Icons/Emoji</td><td>SVG-Icons ✓</td><td>SVG-Icons ✓</td><td>SVG-Icons ✓</td></tr>
-        <tr><td>Kontext-Darstellung</td><td>Fortschrittsbalken</td><td>Blöcke (3/8)</td><td>Ring + Label</td></tr>
-        <tr><td>Mikrofon/Senden</td><td>1 Button, kontextsensitiv</td><td>1 Button, kontextsensitiv</td><td>2 Buttons, immer sichtbar</td></tr>
-        <tr><td>Für Einsteiger</td><td>★★★★</td><td>★★★★★</td><td>★★★</td></tr>
-        <tr><td>Für Power-User</td><td>★★★★</td><td>★★★</td><td>★★★★★</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="demo-area">
+    <div class="chat-mockup">
+      <div class="chat-header" style="gap:12px;">
+        <span class="chat-header-title">Assistent</span>
+      </div>
 
-  <div class="recommendation" style="margin-top:24px;">
-    <div class="rec-card">
-      <h3>Empfehlung: Konzept B</h3>
-      <p>Nach dem Feedback – kein Expand im Input-Bereich, SVG-Icons, Reasoning mit Off-Option – bleibt <strong>Konzept B (Progressive Toolbar)</strong> die stärkste Wahl:</p>
-      <ul>
-        <li><strong>Expand:</strong> Im Chat-Header oben rechts, als "Vollbild"-Button – konsistent in allen 3 Konzepten umgesetzt. Folgt bekanntem Muster von Notion, Linear, ChatGPT.</li>
-        <li><strong>Icons:</strong> Alle als SVG inline – keine Emoji, kein Plattform-Rendering-Problem. Gleiche Darstellung in jedem Renderer.</li>
-        <li><strong>Reasoning mit Aus:</strong> "Aus" als linke, aktive Default-Option. Nutzer aktivieren Denktiefe bewusst. Stufen: Aus · Schnell · Ausgewogen · Gründlich.</li>
-        <li><strong>Toggle-Chips für Tools:</strong> Kein Popover nötig – Tools sind direkt togglebar, aktive sind farbig hervorgehoben. Einfacher als Icon-only-Buttons.</li>
-        <li><strong>Kontext</strong> als "3/8 Blöcke" – ohne Token-Begriff, zugänglich für alle.</li>
-      </ul>
+      <div class="chat-messages">
+        <div class="msg ai">
+          <div class="avatar ai">AI</div>
+          <div class="msg-bubble">Hybrid-Variante aktiv: Werkzeugkoffer + Spektrum-Regler oben rechts.</div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+          <div id="active-tools-d" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;"></div>
+
+          <div class="popover-wrap">
+            <button type="button" class="chip add-tool" onclick="togglePopover('pop-d', this)">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>
+              Tool
+            </button>
+            <div class="tool-popover" id="pop-d">
+              <div class="popover-title">MCP-Tools</div>
+              <div id="tool-list-d"></div>
+            </div>
+          </div>
+
+          <div class="popover-wrap">
+            <button type="button" class="chip add-tool" onclick="togglePopover('pack-pop-d', this)">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="4" width="12" height="9" rx="2"/><path d="M6 4V2.5h4V4"/></svg>
+              Werkzeugkoffer
+            </button>
+            <div class="tool-popover" id="pack-pop-d" style="width:300px; left:auto; right:0;">
+              <div class="popover-title">Schnell-Bundles</div>
+              <button class="tool-item" type="button" onclick="applyToolPack('d','starter')"><div class="tool-info"><div class="tool-name">Starter</div><div class="tool-desc">Web · Docs · Jira</div></div></button>
+              <button class="tool-item" type="button" onclick="applyToolPack('d','dev')"><div class="tool-info"><div class="tool-name">Dev</div><div class="tool-desc">Code · GitHub · Docs</div></div></button>
+              <button class="tool-item" type="button" onclick="applyToolPack('d','ops')"><div class="tool-info"><div class="tool-name">Ops</div><div class="tool-desc">Jira · Kalender · E-Mail</div></div></button>
+              <button class="tool-item" type="button" onclick="applyToolPack('d','data')"><div class="tool-info"><div class="tool-name">Data</div><div class="tool-desc">DB · Web · Docs</div></div></button>
+              <button class="tool-item" type="button" onclick="applyToolPack('d','custom')"><div class="tool-info"><div class="tool-name" id="pack-custom-label-d">Mein Koffer</div><div class="tool-desc">Benutzerdefiniert</div></div></button>
+              <div class="popover-title" style="margin-top:10px;">Koffer bearbeiten</div>
+              <input id="pack-name-d" type="text" value="Mein Koffer" style="width:100%; background:#0f1420; color:#e2e8f0; border:1.5px solid #2d3748; border-radius:8px; padding:7px 9px; font-size:12px; margin-bottom:8px;">
+              <div id="pack-edit-d" style="display:grid; grid-template-columns:1fr 1fr; gap:6px;"></div>
+              <button class="chip add-tool" type="button" onclick="saveCustomPackD()" style="margin-top:8px; width:100%; justify-content:center;">Koffer speichern & anwenden</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="iw">
+          <div class="ta-wrap">
+            <textarea class="ta" id="ta-d" placeholder="Beschreibe dein Anliegen…" rows="3" style="min-height:56px; max-height:220px; padding-right:32px;" oninput="autoGrow(this); updateSendD()"></textarea>
+            <button class="ta-expand-btn" onclick="expandTa('ta-d', this)" title="Vergrößern">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 11l4-4M8 1l3 3-4 4M9 1h2v2"/></svg>
+            </button>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+            <div class="tooltip">
+              <button class="icon-sq" onclick="triggerFile()">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8.5l-6 6a4 4 0 0 1-5.66-5.66l6-6a2.5 2.5 0 0 1 3.54 3.54l-6.01 6a1 1 0 0 1-1.41-1.41l5.5-5.5"/></svg>
+              </button>
+              <span class="tooltip-text">Datei anhängen</span>
+            </div>
+            <div style="flex:1;"></div>
+            <div class="popover-wrap">
+              <button type="button" class="chip add-tool" onclick="togglePopover('reason-pop-d', this)">
+                Denktiefe: <span id="reason-d-label">Aus · 0%</span>
+              </button>
+              <div class="tool-popover" id="reason-pop-d" style="width:300px; left:auto; right:0;">
+                <div class="popover-title">Denktiefe Spektrum</div>
+                <input class="spec-range" id="reason-slider-d" type="range" min="0" max="100" value="0" oninput="setReasonSliderD(this.value)">
+                <div class="spec-scale"><span>Aus</span><span>Schnell</span><span>Ausgewogen</span><span>Tief</span></div>
+              </div>
+            </div>
+            <button class="send-main voice-mode" id="send-d" onclick="handleSendD()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg>
+              <span id="send-d-label">Sprechen</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-divider"><h3>Interaktionslogik – Konzept D</h3></div>
+    <div class="analysis-grid">
+      <div class="analysis-card">
+        <h4>Tools + Werkzeugkoffer</h4>
+        <ul class="pro"><li>Wie A: aktive Chips sofort sichtbar</li><li>Bundles beschleunigen Setup für wiederkehrende Aufgaben</li></ul>
+        <ul class="con"><li>Zusätzliche Option erhöht Komplexität leicht</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Denktiefe im Popover unten rechts</h4>
+        <ul class="pro"><li>Position direkt neben Senden, im primären Interaktionsbereich</li><li>Echter Slider mit Zwischenwerten statt nur feste Stufen</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Denktiefe als Spektrum</h4>
+        <ul class="pro"><li>Nutzer kann fein zwischen den Begriffen wählen</li><li>Label zeigt Wort + Prozentwert für Klarheit</li></ul>
+      </div>
+      <div class="analysis-card">
+        <h4>Fokus auf Kernsteuerung</h4>
+        <ul class="pro"><li>Nur Denktiefe, dadurch weniger visuelle Last</li><li>Kreativität kann später optional ergänzt werden</li></ul>
+      </div>
     </div>
   </div>
-
-  <div class="section-divider"><h3>Microcopy-Empfehlungen (aktualisiert)</h3></div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Element</th><th>Label</th><th>Begründung</th></tr></thead>
-      <tbody>
-        <tr><td>Expand-Button (Header)</td><td>Vollbild</td><td>Universell verständlich, kein technischer Begriff</td></tr>
-        <tr><td>Reasoning – Aus</td><td>Aus</td><td>Klar deaktiviert, kein Overhead</td></tr>
-        <tr><td>Reasoning – Stufe 1</td><td>Schnell</td><td>Positiv, klar</td></tr>
-        <tr><td>Reasoning – Stufe 2</td><td>Ausgewogen</td><td>Neutrales Gleichgewicht</td></tr>
-        <tr><td>Reasoning – Stufe 3</td><td>Gründlich</td><td>Besser als "Deep Thinking" oder "Extended"</td></tr>
-        <tr><td>Denktiefe-Label</td><td>Denktiefe:</td><td>Erklärt Funktion ohne KI-Begriff</td></tr>
-        <tr><td>Kontext-Anzeige</td><td>3/8 Blöcke</td><td>Analogie zu Speicher, kein Token-Begriff</td></tr>
-        <tr><td>Senden (leer)</td><td>Sprechen</td><td>Aktionsorientiert</td></tr>
-        <tr><td>Senden (mit Text)</td><td>Senden</td><td>Universell</td></tr>
-        <tr><td>Datei-Button</td><td>Anhang (Tooltip: "Datei hochladen")</td><td>Kurz + präzise</td></tr>
-        <tr><td>Placeholder</td><td>Was möchtest du wissen oder tun?</td><td>Offen, einladend, handlungsorientiert</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div style="height:48px;"></div>
 </div>
 
 <script>
@@ -624,8 +682,19 @@
   const TOOL_STATE = {
     a: new Set(['web', 'code']),
     b: new Set(['web']),
-    c: new Set(['web', 'code'])
+    c: new Set(['web', 'code']),
+    d: new Set(['web', 'jira', 'docs'])
   };
+
+  const TOOL_PACKS = {
+    starter: ['web', 'docs', 'jira'],
+    dev: ['code', 'github', 'docs'],
+    ops: ['jira', 'calendar', 'email'],
+    data: ['db', 'web', 'docs'],
+    custom: ['web', 'jira', 'docs']
+  };
+
+  let PACK_DRAFT_D = new Set(TOOL_PACKS.custom);
 
   function togglePopover(id, trigger) {
     const p = document.getElementById(id);
@@ -736,16 +805,81 @@
     renderToolPopoverList('tool-list-c', 'c');
   }
 
+  function renderToolsD() {
+    const wrap = document.getElementById('active-tools-d');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    TOOL_DEFS.forEach(tool => {
+      if (!TOOL_STATE.d.has(tool.id)) return;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip tool';
+      chip.onclick = function () { toggleTool('d', tool.id); };
+      chip.innerHTML = `
+        ${toolIcon(tool.id, 11, 'currentColor')}
+        ${tool.label}
+        <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg>
+      `;
+      wrap.appendChild(chip);
+    });
+    renderToolPopoverList('tool-list-d', 'd');
+  }
+
+  function applyToolPack(concept, packId) {
+    const tools = TOOL_PACKS[packId];
+    if (!tools || !TOOL_STATE[concept]) return;
+    TOOL_STATE[concept] = new Set(tools);
+    if (concept === 'd') {
+      PACK_DRAFT_D = new Set(TOOL_STATE.d);
+      renderPackEditorD();
+    }
+    renderTools(concept);
+  }
+
+  function renderPackEditorD() {
+    const target = document.getElementById('pack-edit-d');
+    if (!target) return;
+    target.innerHTML = '';
+    TOOL_DEFS.forEach(tool => {
+      const row = document.createElement('label');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.gap = '6px';
+      row.style.fontSize = '12px';
+      row.style.color = '#94a3b8';
+      const checked = PACK_DRAFT_D.has(tool.id) ? 'checked' : '';
+      row.innerHTML = `<input type="checkbox" ${checked} onchange="togglePackDraftD('${tool.id}', this.checked)"> <span>${tool.label}</span>`;
+      target.appendChild(row);
+    });
+  }
+
+  function togglePackDraftD(toolId, checked) {
+    if (checked) PACK_DRAFT_D.add(toolId);
+    else PACK_DRAFT_D.delete(toolId);
+  }
+
+  function saveCustomPackD() {
+    TOOL_PACKS.custom = Array.from(PACK_DRAFT_D);
+    const nameEl = document.getElementById('pack-name-d');
+    const label = (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : 'Mein Koffer';
+    const titleEl = document.getElementById('pack-custom-label-d');
+    if (titleEl) titleEl.textContent = label;
+    applyToolPack('d', 'custom');
+  }
+
   function renderTools(concept) {
     if (concept === 'a') renderToolsA();
     if (concept === 'b') renderToolsB();
     if (concept === 'c') renderToolsC();
+    if (concept === 'd') renderToolsD();
   }
 
   function initTools() {
     renderToolsA();
     renderToolsB();
     renderToolsC();
+    renderToolsD();
+    renderPackEditorD();
   }
 
   function toggleReasonDrop(dropId) {
@@ -801,6 +935,16 @@
     if (current) current.textContent = 'Aktiv: ' + value;
   }
 
+  function setReasonSliderD(rawValue) {
+    const value = Number(rawValue);
+    let label = 'Aus';
+    if (value >= 20 && value < 45) label = 'Schnell';
+    else if (value >= 45 && value < 75) label = 'Ausgewogen';
+    else if (value >= 75) label = 'Tief';
+    const out = document.getElementById('reason-d-label');
+    if (out) out.textContent = `${label} · ${Math.round(value)}%`;
+  }
+
   function expandTa(taId, btn) {
     const ta = document.getElementById(taId);
     const expanded = btn.classList.contains('expanded');
@@ -848,6 +992,18 @@
     }
   }
 
+  function updateSendD() {
+    const t = document.getElementById('ta-d').value.trim();
+    const btn = document.getElementById('send-d');
+    if (t) {
+      btn.classList.remove('voice-mode');
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4 13 8 9 12"/></svg><span id="send-d-label">Senden</span>`;
+    } else {
+      btn.classList.add('voice-mode');
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1a3 3 0 0 1 3 3v4a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M3 9a5 5 0 0 0 10 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg><span id="send-d-label">Sprechen</span>`;
+    }
+  }
+
   function handleSendA() {
     const t = document.getElementById('ta-a').value.trim();
     if (!t) handleVoice();
@@ -855,6 +1011,11 @@
 
   function handleSendB() {
     const t = document.getElementById('ta-b').value.trim();
+    if (!t) handleVoice();
+  }
+
+  function handleSendD() {
+    const t = document.getElementById('ta-d').value.trim();
     if (!t) handleVoice();
   }
 
@@ -884,5 +1045,6 @@
 </script>
 </body>
 </html>
+
 
 
