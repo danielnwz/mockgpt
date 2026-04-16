@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Send, Compass, Sparkles, Maximize2, Minimize2, ArrowRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Compass, Sparkles, ArrowRight } from 'lucide-react';
 import { Assistant } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
+import { ChatComposer } from './ChatComposer';
 
 interface HomePageProps {
   onStartChat: (message: string, assistant?: Assistant) => void;
@@ -21,8 +22,6 @@ export function HomePage({
   onOpenVersion,
 }: HomePageProps) {
   const { t, getWelcomeMessages } = useTranslation();
-  const [message, setMessage] = useState('');
-  const [isInputExpanded, setIsInputExpanded] = useState(false);
   const [welcomeMsg, setWelcomeMsg] = useState({ greeting: '', message: '' });
 
   useEffect(() => {
@@ -34,29 +33,11 @@ export function HomePage({
 
   const visibleGridAssistants = recommendedAssistants.slice(0, 5);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim()) {
-      onStartChat(message.trim());
-      setMessage('');
-    }
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (message.trim()) {
-        onStartChat(message.trim());
-        setMessage('');
-      }
-    }
-  };
-
   const renderAssistantCard = (assistant: Assistant, index?: number) => (
     <button
       key={assistant.id}
       onClick={() => onStartChat('', assistant)}
-      className="group relative flex flex-col p-4 bg-card rounded-xl border border-border/50 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden animate-fade-up text-left"
+      className="surface-card-premium group relative flex flex-col p-5 cursor-pointer animate-fade-up text-left"
       style={index !== undefined ? { animationDelay: `${index * 60}ms` } : undefined}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -77,46 +58,31 @@ export function HomePage({
     </button>
   );
 
+  const greetingParts = welcomeMsg.greeting.trim().split(' ');
+  const greetingEmoji = greetingParts.length > 1 && !greetingParts[greetingParts.length - 1].match(/[a-zA-Z]/) ? greetingParts.pop() : '';
+  const greetingText = greetingParts.join(' ');
+
   return (
     <div className="h-full overflow-y-auto thin-scrollbar">
       <div className="min-h-full flex flex-col items-center justify-start p-8 bg-transparent">
         <div className="w-full max-w-6xl space-y-8 flex-1 mt-10">
           <div className="relative text-center space-y-3 mt-10">
-            <div className="context-halo -translate-x-10 -translate-y-6" />
-            <h1 className="type-display text-foreground">{welcomeMsg.greeting}</h1>
+            <div className="context-halo" />
+            <h1 className="type-display pb-1 flex items-center justify-center gap-2">
+              <span className="text-gradient-premium">{greetingText}</span>
+              {greetingEmoji && <span className="inline-block text-foreground drop-shadow-sm">{greetingEmoji}</span>}
+            </h1>
             <p className="text-xl text-muted-foreground">
               {welcomeMsg.message}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-3xl items-start gap-2">
-            <div className="relative flex-1">
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleInputKeyDown}
-                placeholder={t('startConversation')}
-                rows={isInputExpanded ? 6 : 1}
-                style={{ resize: 'none' }}
-                className={`w-full rounded-2xl border bg-card text-card-foreground shadow-lg focus:outline-none focus:ring-2 focus:ring-ring text-lg leading-relaxed transition-all duration-200 ${isInputExpanded ? 'px-6 py-4 pr-10 min-h-[180px] overflow-y-auto' : 'px-6 py-2.5 pr-10 min-h-[56px] overflow-hidden'}`}
-              />
-              <button
-                type="button"
-                onClick={() => setIsInputExpanded((prev) => !prev)}
-                className="absolute right-2 top-2 h-4 w-4 rounded-sm bg-muted/85 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex items-center justify-center z-10"
-                title={isInputExpanded ? 'Collapse input' : 'Expand input'}
-              >
-                {isInputExpanded ? <Minimize2 className="w-2.5 h-2.5" /> : <Maximize2 className="w-2.5 h-2.5" />}
-              </button>
-            </div>
-            <button
-              type="submit"
-              disabled={!message.trim()}
-              className="btn-primary h-[56px] w-12 rounded-xl p-0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </form>
+          <div className="mx-auto w-full max-w-3xl">
+            <ChatComposer
+              onSubmit={(msg) => onStartChat(msg)}
+              placeholder={t('startConversation')}
+            />
+          </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -131,7 +97,7 @@ export function HomePage({
                 {visibleGridAssistants.map((assistant, index) => renderAssistantCard(assistant, index))}
                 <button
                   onClick={onOpenAssistants || onDiscoverAll}
-                  className="group relative flex flex-col p-4 rounded-xl border border-primary/35 bg-card shadow-md hover:shadow-lg hover:shadow-primary/20 hover:border-primary/55 transition-all duration-300 cursor-pointer overflow-hidden animate-fade-up text-left"
+                  className="surface-card-premium group relative flex flex-col p-5 cursor-pointer animate-fade-up text-left"
                   style={{ animationDelay: `${visibleGridAssistants.length * 60}ms` }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/14 via-primary/6 to-transparent opacity-80 transition-opacity group-hover:opacity-100" />

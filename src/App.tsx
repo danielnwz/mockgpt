@@ -169,6 +169,18 @@ export default function App() {
     localStorage.setItem('chats', JSON.stringify(seededChats));
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle('dark', darkMode);
+    document.body.classList.toggle('private', privateMode);
+  }, [darkMode, privateMode]);
+
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('dark');
+      document.body.classList.remove('private');
+    };
+  }, []);
+
   const handleAcceptTerms = () => {
     localStorage.setItem('termsAccepted', 'true');
     setShowTerms(false);

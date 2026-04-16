@@ -1,27 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
-  Send,
   Settings,
   ChevronDown,
   ShieldCheck,
-  Globe,
   Info,
   MapPin,
-  Maximize2,
-  Minimize2,
   Copy,
   RotateCcw,
   Check,
   Ellipsis,
-  Mic,
-  X,
-  Plus,
-  Search,
-  Code2,
-  FileUp,
-  BarChart3,
-  ImagePlus,
-  Paperclip,
 } from 'lucide-react';
 import { Chat, Assistant, ResponseBehavior } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -29,30 +16,8 @@ import { AssistantDetailsSidebar } from './AssistantDetailsSidebar';
 import { findLLMModelById, getAvailableLLMModels, getFallbackLLMModelId } from '../data/llmModels';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Slider } from './ui/slider';
+import { ChatComposer } from './ChatComposer';
 
-type ComposerToolId =
-  | 'search'
-  | 'web_browser'
-  | 'code_interpreter'
-  | 'file_upload'
-  | 'data_analysis'
-  | 'image_generation';
-
-type ComposerToolDefinition = {
-  id: ComposerToolId;
-  label: string;
-  icon: typeof Search;
-};
-
-const COMPOSER_TOOLS: ComposerToolDefinition[] = [
-  { id: 'search', label: 'Search', icon: Search },
-  { id: 'web_browser', label: 'Web Browser', icon: Globe },
-  { id: 'code_interpreter', label: 'Code Interpreter', icon: Code2 },
-  { id: 'file_upload', label: 'File Upload', icon: FileUp },
-  { id: 'data_analysis', label: 'Data Analysis', icon: BarChart3 },
-  { id: 'image_generation', label: 'Image Generation', icon: ImagePlus },
-];
 
 function responseBehaviorToSpectrum(behavior: ResponseBehavior) {
   switch (behavior) {
@@ -118,12 +83,10 @@ export function ChatWindow({
     { value: 2, label: 'Balanced' },
     { value: 3, label: 'Thorough' },
   ], []);
-  const [input, setInput] = useState('');
   const [showLLMMenu, setShowLLMMenu] = useState(false);
   const [showModelDetails, setShowModelDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAssistantDetails, setShowAssistantDetails] = useState(false);
-  const [isComposerExpanded, setIsComposerExpanded] = useState(false);
   const [selectedLLM, setSelectedLLM] = useState(
     chat.llmModel || assistant?.defaultLlmModel || getFallbackLLMModelId(privateMode)
   );
@@ -140,10 +103,8 @@ export function ChatWindow({
   const [chatSystemPrompt, setChatSystemPrompt] = useState(
     chat.systemPrompt || assistant?.systemPrompt || 'You are a helpful AI assistant.'
   );
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const rewriteQuickPrompts = [
     { value: 'shorter', label: t('rewriteShorter') },
     { value: 'formal', label: t('rewriteFormal') },
@@ -177,37 +138,17 @@ export function ChatWindow({
     setChatResponseBehavior(nextBehavior);
     setReasoningLevel(responseBehaviorToSpectrum(nextBehavior));
     setChatSystemPrompt(chat.systemPrompt || assistant?.systemPrompt || 'You are a helpful AI assistant.');
-    setSelectedFiles([]);
   }, [assistant?.id, chat.id]);
-
-  const availableComposerTools = useMemo(() => {
-    if (assistant?.allowedTools?.length) {
-      return COMPOSER_TOOLS.filter((tool) => assistant.allowedTools.includes(tool.id));
-    }
-    return COMPOSER_TOOLS;
-  }, [assistant?.allowedTools]);
-
-  const [activeTools, setActiveTools] = useState<ComposerToolId[]>([]);
-
-  useEffect(() => {
-    const nextTools = availableComposerTools.slice(0, Math.min(3, availableComposerTools.length)).map((tool) => tool.id);
-    setActiveTools(nextTools);
-  }, [availableComposerTools, chat.id, assistant?.id, privateMode]);
-
-  const activeToolSet = useMemo(() => new Set(activeTools), [activeTools]);
 
   const reasoningLabel = useMemo(
     () => reasoningOptions.find((option) => option.value === reasoningLevel)?.label || reasoningOptions[0].label,
     [reasoningLevel, reasoningOptions]
   );
-  const hasTypedInput = input.trim().length > 0;
   const contextWindow = useMemo(() => {
     const maxTokens = selectedModel?.maxInput || 1;
     const textParts = [
       chatSystemPrompt,
       ...chat.messages.map((message) => message.content),
-      input,
-      ...selectedFiles.map((file) => file.name),
     ];
     const totalCharacters = textParts.join('\n').length;
     const estimatedTokens = Math.max(1, Math.ceil(totalCharacters / 4));
@@ -218,7 +159,7 @@ export function ChatWindow({
       maxTokens,
       usagePercent,
     };
-  }, [chat.messages, chatSystemPrompt, input, selectedFiles, selectedModel?.maxInput]);
+  }, [chat.messages, chatSystemPrompt, selectedModel?.maxInput]);
 
   const contextWindowTone = useMemo(() => {
     if (contextWindow.usagePercent >= 90) {
@@ -306,14 +247,6 @@ export function ChatWindow({
     </Popover>
   );
 
-  const toggleComposerTool = (toolId: ComposerToolId) => {
-    setActiveTools((current) => (
-      current.includes(toolId)
-        ? current.filter((id) => id !== toolId)
-        : [...current, toolId]
-    ));
-  };
-
   const updateReasoningLevel = (value: number) => {
     setReasoningLevel(value);
     const nextBehavior = spectrumToResponseBehavior(value);
@@ -322,49 +255,6 @@ export function ChatWindow({
     if (onUpdateChat && chat.responseBehavior !== nextBehavior) {
       onUpdateChat({ ...chat, responseBehavior: nextBehavior });
     }
-  };
-
-  const submitInput = () => {
-    const trimmedInput = input.trim();
-    const attachmentSummary = selectedFiles.length > 0
-      ? `\n\nAttached files:\n${selectedFiles.map((file) => `- ${file.name}`).join('\n')}`
-      : '';
-    const content = `${trimmedInput}${attachmentSummary}`.trim();
-
-    if (!content) return;
-
-    onSendMessage(content);
-    setInput('');
-    setSelectedFiles([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleAttachClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-
-    setSelectedFiles((current) => {
-      const existingKeys = new Set(current.map((file) => `${file.name}-${file.size}-${file.lastModified}`));
-      const nextFiles = files.filter((file) => !existingKeys.has(`${file.name}-${file.size}-${file.lastModified}`));
-      return [...current, ...nextFiles];
-    });
-  };
-
-  const removeSelectedFile = (fileToRemove: File) => {
-    setSelectedFiles((current) => current.filter((file) => (
-      !(file.name === fileToRemove.name && file.size === fileToRemove.size && file.lastModified === fileToRemove.lastModified)
-    )));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    submitInput();
   };
 
   const handleLLMChange = (modelId: string) => {
@@ -395,23 +285,14 @@ export function ChatWindow({
     setShowSettings(false);
   };
 
-  const handleComposerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      submitInput();
-    }
-  };
-
   const isOwner = assistant && (userAssistants?.some(a => a.id === assistant.id) || assistant.createdBy === 'user');
   const hasExamplePrompts = Boolean(assistant?.examplePrompts?.length);
   const handleStartWithExample = (prompt: string) => {
     onSendMessage(prompt);
-    setInput('');
   };
 
   const handleQuickFollowUp = (prompt: string) => {
     onSendMessage(prompt);
-    setInput('');
   };
 
   const handleCopyMessage = async (messageId: string, content: string) => {
@@ -440,7 +321,6 @@ export function ChatWindow({
     const previousUserPrompt = getPreviousUserPrompt(messageIndex);
     if (!previousUserPrompt) return;
     onSendMessage(previousUserPrompt);
-    setInput('');
   };
 
   return (
@@ -899,181 +779,18 @@ export function ChatWindow({
 
         {/* Input */}
         <div className="p-6">
-          <form onSubmit={handleSubmit} className="mx-auto max-w-4xl">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleFileSelection}
+          <div className="mx-auto max-w-4xl">
+            <ChatComposer
+              onSubmit={onSendMessage}
+              placeholder={privateMode ? (t('typeSecureMessage') || 'Type a secure message...') : (t('typeStandardMessage') || 'Type a message...')}
+              privateMode={privateMode}
+              allowedTools={assistant?.allowedTools}
+              reasoningLevel={reasoningLevel}
+              reasoningOptions={reasoningOptions}
+              onReasoningChange={updateReasoningLevel}
+              reasoningLabel={reasoningLabel}
             />
-            {!assistant && availableComposerTools.length > 0 && (
-              <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                {availableComposerTools.filter((tool) => activeToolSet.has(tool.id)).map((tool) => {
-                  const ToolIcon = tool.icon;
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => toggleComposerTool(tool.id)}
-                      className="group inline-flex items-center rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/15"
-                    >
-                      <ToolIcon className="h-3 w-3" />
-                      <span className="ml-1.5">{tool.label}</span>
-                      <span className="inline-flex h-4 w-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-[12px] font-semibold leading-none opacity-0 transition-all duration-200 group-hover:ml-1 group-hover:w-4 group-hover:opacity-100">
-                        X
-                      </span>
-                    </button>
-                  );
-                })}
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/15"
-                    >
-                      <Plus className="h-3 w-3" />
-                      <span>Tool</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" className="w-80 rounded-2xl border-border bg-popover p-2">
-                    <div className="px-2 pb-2 pt-1">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Available Tools</p>
-                    </div>
-                    <div className="space-y-1">
-                      {availableComposerTools.map((tool) => {
-                        const ToolIcon = tool.icon;
-                        const isActive = activeToolSet.has(tool.id);
-
-                        return (
-                          <button
-                            key={tool.id}
-                            type="button"
-                            onClick={() => toggleComposerTool(tool.id)}
-                            className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${isActive
-                              ? 'border-primary/30 bg-primary/10 text-primary'
-                              : 'border-transparent bg-transparent text-foreground hover:bg-accent/60'
-                              }`}
-                          >
-                            <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                              <ToolIcon className="h-4 w-4" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>{tool.label}</p>
-                              <p className={`text-xs ${isActive ? 'text-primary/80' : 'text-muted-foreground'}`}>
-                                {isActive ? 'Active in this chat' : 'Add to this chat'}
-                              </p>
-                            </div>
-                            {isActive && <Check className="h-4 w-4 text-primary" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            <div className="rounded-[1.15rem] border border-border/80 bg-card px-4 py-3 shadow-lg shadow-black/5 transition-colors focus-within:border-primary/40">
-              {selectedFiles.length > 0 && (
-                <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                  {selectedFiles.map((file) => (
-                    <button
-                      key={`${file.name}-${file.size}-${file.lastModified}`}
-                      type="button"
-                      onClick={() => removeSelectedFile(file)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:border-primary/30 hover:text-primary"
-                      title={`Remove ${file.name}`}
-                    >
-                      <FileUp className="h-3 w-3" />
-                      <span className="max-w-40 truncate">{file.name}</span>
-                      <X className="h-3 w-3" />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="relative">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleComposerKeyDown}
-                  placeholder={privateMode
-                    ? (t('typeSecureMessage') || "Type a secure message...")
-                    : (t('typeStandardMessage') || "Type a message...")
-                  }
-                  rows={isComposerExpanded ? 6 : 2}
-                  style={{ resize: 'none' }}
-                  className={`w-full border-0 bg-transparent pr-10 text-sm leading-6 text-foreground outline-none transition-all placeholder:text-muted-foreground ${isComposerExpanded ? 'min-h-[400px]' : 'min-h-[48px] max-h-[220px]'}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setIsComposerExpanded((prev) => !prev)}
-                  className="absolute right-0 top-0 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
-                  title={isComposerExpanded ? 'Collapse input' : 'Expand input'}
-                >
-                  {isComposerExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-                </button>
-              </div>
-
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleAttachClick}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
-                  title="Add files"
-                >
-                  <Paperclip className="h-4 w-4" />
-                </button>
-
-                <div className="flex-1" />
-
-                <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/30"
-                      >
-                        <span>Reasoning: {reasoningLabel}</span>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent align="end" className="w-80 rounded-2xl border-border bg-popover p-4">
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Reasoning Spectrum</p>
-                          <p className="mt-1 text-sm font-medium text-foreground">{reasoningLabel}</p>
-                        </div>
-                        <Slider
-                          value={[reasoningLevel]}
-                          min={0}
-                          max={3}
-                          step={1}
-                          onValueChange={([value]) => updateReasoningLevel(value)}
-                        />
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          {reasoningOptions.map((option) => (
-                            <span key={option.value}>{option.label}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                <button
-                  type={hasTypedInput ? 'submit' : 'button'}
-                  className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-sm transition-colors ${hasTypedInput
-                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : 'border border-border bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                  title={hasTypedInput ? t('send') : 'Voice input'}
-                >
-                  {hasTypedInput ? <Send className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  <span>{hasTypedInput ? t('send') : 'Speak'}</span>
-                </button>
-              </div>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
 

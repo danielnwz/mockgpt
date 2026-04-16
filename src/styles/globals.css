@@ -333,14 +333,35 @@
 
 @layer components {
   .context-halo {
-    @apply pointer-events-none absolute left-0 top-0 h-32 w-[420px] rounded-full blur-3xl opacity-70;
-    background: radial-gradient(closest-side, rgba(149, 186, 176, 0.45), transparent 70%);
+    @apply pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[350px] w-[700px] rounded-full blur-[100px] opacity-40;
+    background: radial-gradient(closest-side, var(--primary), transparent 100%);
+    z-index: -1;
   }
 
   .dark .context-halo {
-    background: radial-gradient(closest-side, rgba(126, 203, 184, 0.28), transparent 70%);
+    opacity: 0.15;
+  }
+
+  .surface-card-premium {
+    @apply backdrop-blur-md rounded-2xl border shadow-sm transition-all duration-500 overflow-hidden;
+    background-color: color-mix(in srgb, var(--card) 85%, transparent);
+    border-color: color-mix(in srgb, var(--border) 40%, transparent);
+  }
+  .surface-card-premium:hover {
+    @apply -translate-y-1;
+    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+    box-shadow: 0 20px 40px -15px color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+
+  .text-gradient-premium {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary-foreground) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
   }
 }
+
 
 @layer utilities {
   @keyframes fade-up {
