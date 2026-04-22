@@ -5,32 +5,29 @@
 :root {
   --font-size: 16px;
 
-  /* Light Mode - Salbeigrün-Palette
-     Basis: rgb(149, 186, 176) / #95bab0
-     Dunklere Variante für Buttons: #4d7c72 (Kontrast 4.6:1 mit Weiß)
-  */
-  --background: #f5f7f6;
-  --foreground: #1a2421;
+  /* Light Mode - Standard workspace now uses the previous secure blue palette */
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #1a2421;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1a2421;
+  --popover-foreground: #0f172a;
 
-  /* Primary: Dunkleres Salbeigrün für besseren Kontrast */
-  --primary: #4d7c72;
+  /* Primary: Royal blue */
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
 
-  /* Secondary: Helles Salbeigrün für Badges/Tags */
-  --secondary: rgb(149, 186, 176);
-  --secondary-foreground: #1a2421;
+  /* Secondary: Light blue for softer surfaces */
+  --secondary: #dbeafe;
+  --secondary-foreground: #1e3a8a;
 
-  /* Muted: Dezenter Hintergrund */
-  --muted: #e8efed;
-  --muted-foreground: #5a6b66;
+  /* Muted: Neutral slate */
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
 
-  /* Accent: Helles Salbeigrün für Hover */
-  --accent: #d4e4e0;
-  --accent-foreground: #1a2421;
+  /* Accent: Blue-tinted hover state */
+  --accent: #eff6ff;
+  --accent-foreground: #1e40af;
 
   /* Destructive: Warmes Rot */
   --destructive: #dc2626;
@@ -48,60 +45,58 @@
   --info: #2563EB;
   --info-foreground: #ffffff;
 
-  --border: #c5d4cf;
+  --border: #e2e8f0;
   --input: #ffffff;
   --input-background: #ffffff;
-  --switch-background: #4d7c72;
+  --switch-background: #3b82f6;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #4d7c72;
+  --ring: #3b82f6;
 
-  /* Charts - Salbeigrün-Abstufungen */
-  --chart-1: #4d7c72;
-  --chart-2: #6a9d8d;
-  --chart-3: rgb(149, 186, 176);
-  --chart-4: #b8d4cb;
-  --chart-5: #dc2626;
+  /* Charts - Blue spectrum */
+  --chart-1: #2563eb;
+  --chart-2: #3b82f6;
+  --chart-3: #60a5fa;
+  --chart-4: #93c5fd;
+  --chart-5: #1d4ed8;
 
   --radius: 0.625rem;
 
   /* Sidebar */
-  --sidebar: #e8efed;
-  --sidebar-foreground: #1a2421;
-  --sidebar-primary: #4d7c72;
+  --sidebar: #f1f5f9;
+  --sidebar-foreground: #334155;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #d4e4e0;
-  --sidebar-accent-foreground: #1a2421;
-  --sidebar-border: #c5d4cf;
-  --sidebar-ring: #4d7c72;
+  --sidebar-accent: #dbeafe;
+  --sidebar-accent-foreground: #1e3a8a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #3b82f6;
 }
 
 .dark {
-  /* Dark Mode - Refined charcoal-teal with wider tonal spread
-     Primary: brighter sage for good contrast on dark background
-  */
-  --background: #0F2B27;
-  --foreground: #E2F0EC;
-  --card: #1A3631;
-  --card-foreground: #E2F0EC;
-  --popover: #1A3631;
-  --popover-foreground: #E2F0EC;
+  /* Dark Mode - Standard workspace now uses the previous secure dark blue palette */
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
 
-  /* Primary: Brighter sage for dark mode visibility */
-  --primary: #7ECBB8;
-  --primary-foreground: #002B25;
+  /* Primary: Bright blue for dark mode visibility */
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
 
-  /* Secondary: Medium teal */
-  --secondary: #2D635A;
-  --secondary-foreground: #E2F0EC;
+  /* Secondary: Dark blue */
+  --secondary: #1e3a8a;
+  --secondary-foreground: #e0e7ff;
 
-  /* Muted: Subtle dark teal */
-  --muted: #1C403A;
-  --muted-foreground: #A8C4BC;
+  /* Muted: Slate surfaces */
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
 
-  /* Accent: Hover-state teal */
-  --accent: #1F524A;
-  --accent-foreground: #E2F0EC;
+  /* Accent: Hover-state blue */
+  --accent: #1e40af;
+  --accent-foreground: #f1f5f9;
 
   /* Destructive */
   --destructive: #f87171;
@@ -119,30 +114,30 @@
   --info: #60A5FA;
   --info-foreground: #1E3A5F;
 
-  --border: #35796F;
-  --input: #183532;
-  --input-background: #183532;
-  --switch-background: #7ECBB8;
+  --border: #334155;
+  --input: #1e293b;
+  --input-background: #1e293b;
+  --switch-background: #3b82f6;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #7ECBB8;
+  --ring: #3b82f6;
 
   /* Charts */
-  --chart-1: #7ECBB8;
-  --chart-2: #5CBDA8;
-  --chart-3: #3BA57A;
-  --chart-4: #2D8B6E;
+  --chart-1: #3b82f6;
+  --chart-2: #60a5fa;
+  --chart-3: #93c5fd;
+  --chart-4: #1d4ed8;
   --chart-5: #f87171;
 
   /* Sidebar */
-  --sidebar: #0A2420;
-  --sidebar-foreground: #E2F0EC;
-  --sidebar-primary: #7ECBB8;
-  --sidebar-primary-foreground: #002B25;
-  --sidebar-accent: #2D635A;
-  --sidebar-accent-foreground: #E2F0EC;
-  --sidebar-border: #2A524A;
-  --sidebar-ring: #7ECBB8;
+  --sidebar: #020617;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e3a8a;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #3b82f6;
 }
 
 @layer base {
@@ -157,56 +152,55 @@
     background-color: var(--background);
   }
 
-  /* Private Mode - Trust/Secure Blue Theme */
+  /* Private Mode - Secure workspace now uses the green palette */
   .private body,
   .private {
-    /* Base Blue Palette - Light Mode */
-    --primary: #2563EB;
-    /* Royal Blue */
+    /* Light Mode - Sage/green secure palette */
+    --background: #f5f7f6;
+    --foreground: #1a2421;
+    --card: #ffffff;
+    --card-foreground: #1a2421;
+    --popover: #ffffff;
+    --popover-foreground: #1a2421;
+
+    --primary: #4d7c72;
     --primary-foreground: #ffffff;
 
-    --secondary: #dbeafe;
-    /* Light Blue */
-    --secondary-foreground: #1e3a8a;
+    --secondary: rgb(149, 186, 176);
+    --secondary-foreground: #1a2421;
 
-    --muted: #f1f5f9;
-    --muted-foreground: #64748b;
+    --muted: #e8efed;
+    --muted-foreground: #5a6b66;
 
-    --accent: #eff6ff;
-    --accent-foreground: #1e40af;
+    --accent: #d4e4e0;
+    --accent-foreground: #1a2421;
 
-    --background: #f8fafc;
-    --foreground: #0f172a;
-
-    --sidebar: #f1f5f9;
-    --sidebar-foreground: #334155;
-    --sidebar-primary: #2563EB;
+    --sidebar: #e8efed;
+    --sidebar-foreground: #1a2421;
+    --sidebar-primary: #4d7c72;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #dbeafe;
-    --sidebar-accent-foreground: #1e3a8a;
-    --sidebar-border: #e2e8f0;
+    --sidebar-accent: #d4e4e0;
+    --sidebar-accent-foreground: #1a2421;
+    --sidebar-border: #c5d4cf;
 
-    --border: #e2e8f0;
+    --border: #c5d4cf;
     --input: #ffffff;
-    --ring: #3b82f6;
+    --input-background: #ffffff;
+    --switch-background: #4d7c72;
+    --ring: #4d7c72;
 
-    /* Charts (Blue/Indigo spectrum) */
-    --chart-1: #2563EB;
-    --chart-2: #3B82F6;
-    --chart-3: #60A5FA;
-    --chart-4: #93C5FD;
-    --chart-5: #1D4ED8;
+    /* Charts (Green spectrum) */
+    --chart-1: #4d7c72;
+    --chart-2: #6a9d8d;
+    --chart-3: rgb(149, 186, 176);
+    --chart-4: #b8d4cb;
+    --chart-5: #dc2626;
   }
 
 
-
-  .dark {
-    /* Dark Mode - Dunkles Salbeigrün as default... */
-    /* (Keeping original dark vars here, they are applied when .dark is present) */
-  }
 
   body:has(.dark) {
-    background-color: #0F2B27;
+    background-color: #0f172a;
   }
 
   /* Private + Dark Mode Overrides */
@@ -214,50 +208,52 @@
   .private.dark body,
   .private .dark,
   .private.dark {
-    --background: #0f172a;
-    /* Slate 900 */
-    --foreground: #f1f5f9;
-    /* Slate 100 */
-    --card: #1e293b;
-    /* Slate 800 */
-    --card-foreground: #f1f5f9;
-    --popover: #1e293b;
-    --popover-foreground: #f1f5f9;
+    --background: #0f2b27;
+    --foreground: #e2f0ec;
+    --card: #1a3631;
+    --card-foreground: #e2f0ec;
+    --popover: #1a3631;
+    --popover-foreground: #e2f0ec;
 
-    --primary: #3b82f6;
-    /* Blue 500 - brighter for dark mode */
-    --primary-foreground: #ffffff;
+    --primary: #7ecbb8;
+    --primary-foreground: #002b25;
 
-    --secondary: #1e3a8a;
-    /* Dark Blue */
-    --secondary-foreground: #e0e7ff;
+    --secondary: #2d635a;
+    --secondary-foreground: #e2f0ec;
 
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
+    --muted: #1c403a;
+    --muted-foreground: #a8c4bc;
 
-    --accent: #1e40af;
-    --accent-foreground: #f1f5f9;
+    --accent: #1f524a;
+    --accent-foreground: #e2f0ec;
 
     --destructive: #ef4444;
     --destructive-foreground: #fef2f2;
 
-    --border: #334155;
-    --input: #1e293b;
-    --input-background: #1e293b;
-    --switch-background: #3b82f6;
+    --border: #35796f;
+    --input: #183532;
+    --input-background: #183532;
+    --switch-background: #7ecbb8;
+    --ring: #7ecbb8;
 
-    --sidebar: #020617;
-    /* Slate 950 */
-    --sidebar-foreground: #cbd5e1;
-    --sidebar-primary: #3b82f6;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #1e3a8a;
-    --sidebar-accent-foreground: #f8fafc;
-    --sidebar-border: #1e293b;
+    --chart-1: #7ecbb8;
+    --chart-2: #5cbda8;
+    --chart-3: #3ba57a;
+    --chart-4: #2d8b6e;
+    --chart-5: #f87171;
+
+    --sidebar: #0a2420;
+    --sidebar-foreground: #e2f0ec;
+    --sidebar-primary: #7ecbb8;
+    --sidebar-primary-foreground: #002b25;
+    --sidebar-accent: #2d635a;
+    --sidebar-accent-foreground: #e2f0ec;
+    --sidebar-border: #2a524a;
+    --sidebar-ring: #7ecbb8;
   }
 
   .private body:has(.dark) {
-    background-color: #0f172a;
+    background-color: #0f2b27;
   }
 }
 

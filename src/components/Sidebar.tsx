@@ -226,14 +226,14 @@ export function Sidebar({
               <ChevronRight className="w-5 h-5" />
             </button>
           ) : (
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground dark:bg-[#4f7b72]'}`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground'}`}>
               <Leaf className="w-5 h-5" />
             </div>
           )
         ) : (
           <>
             <div className="flex items-center gap-3 min-w-0">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground dark:bg-[#4f7b72]'}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground'}`}>
                 <Leaf className="w-5 h-5" />
               </div>
               <h1 className="type-section text-sidebar-foreground truncate">MOCKGPT</h1>
