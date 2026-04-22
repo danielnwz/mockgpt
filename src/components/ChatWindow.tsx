@@ -14,7 +14,7 @@ import { Chat, Assistant, ResponseBehavior } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
 import { AssistantDetailsSidebar } from './AssistantDetailsSidebar';
 import { findLLMModelById, getAvailableLLMModels, getFallbackLLMModelId } from '../data/llmModels';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ChatComposer } from './ChatComposer';
 
@@ -104,6 +104,7 @@ export function ChatWindow({
     chat.systemPrompt || assistant?.systemPrompt || 'You are a helpful AI assistant.'
   );
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [plainTextMessageIds, setPlainTextMessageIds] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const rewriteQuickPrompts = [
     { value: 'shorter', label: t('rewriteShorter') },
@@ -138,6 +139,7 @@ export function ChatWindow({
     setChatResponseBehavior(nextBehavior);
     setReasoningLevel(responseBehaviorToSpectrum(nextBehavior));
     setChatSystemPrompt(chat.systemPrompt || assistant?.systemPrompt || 'You are a helpful AI assistant.');
+    setPlainTextMessageIds({});
   }, [assistant?.id, chat.id]);
 
   const reasoningLabel = useMemo(
@@ -321,6 +323,13 @@ export function ChatWindow({
     const previousUserPrompt = getPreviousUserPrompt(messageIndex);
     if (!previousUserPrompt) return;
     onSendMessage(previousUserPrompt);
+  };
+
+  const toggleMessageTextMode = (messageId: string) => {
+    setPlainTextMessageIds((current) => ({
+      ...current,
+      [messageId]: !current[messageId],
+    }));
   };
 
   return (
@@ -689,6 +698,7 @@ export function ChatWindow({
             const previousUserPrompt = getPreviousUserPrompt(index);
             const canRegenerate = Boolean(previousUserPrompt);
             const isLatestAssistant = isAssistant && index === chat.messages.length - 1;
+            const isPlainTextMode = Boolean(plainTextMessageIds[message.id]);
 
             return (
               <div
@@ -706,66 +716,65 @@ export function ChatWindow({
                     🤖
                   </div>
                 )}
-                <div
-                  className={`max-w-2xl rounded-2xl px-5 py-3 relative ${message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary/90 border border-border/45 text-secondary-foreground shadow-sm backdrop-blur-sm'
-                    }`}
-                >
+                <div className={`max-w-2xl ${isAssistant ? 'min-w-0' : ''}`}>
+                  <div
+                    className={`group/bubble rounded-2xl px-5 py-3 ${isAssistant ? 'pr-20' : 'pr-12'} relative ${message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-secondary/90 border border-border/45 text-black shadow-sm backdrop-blur-sm'
+                      }`}
+                  >
+                    <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 pointer-events-none transition-all group-hover/bubble:opacity-100 group-hover/bubble:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
+                      <button
+                        onClick={() => handleCopyMessage(message.id, message.content)}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/45 bg-background/85 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"
+                        title={t('copyMessage')}
+                      >
+                        {copiedMessageId === message.id ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                      {isAssistant && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/45 bg-background/85 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"
+                              title="More actions"
+                            >
+                              <Ellipsis className="w-3.5 h-3.5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" sideOffset={6} className="w-44">
+                            {isLatestAssistant && (
+                              <DropdownMenuItem onSelect={() => handleRegenerate(index)} disabled={!canRegenerate}>
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                {t('regenerate')}
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onSelect={() => toggleMessageTextMode(message.id)}>
+                              <Check className={`w-3.5 h-3.5 ${isPlainTextMode ? 'opacity-100' : 'opacity-0'}`} />
+                              {isPlainTextMode ? 'Formatted View' : 'Plain Text View'}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
+
                   {isAssistant && (
-                    <div className="absolute right-2 top-2 z-20 flex items-center gap-1 group/actions">
-                      <div className="relative flex items-center gap-1 rounded-md border border-border/55 bg-background px-1 py-1 shadow-md opacity-0 translate-x-1 pointer-events-none transition-all group-hover/actions:opacity-100 group-hover/actions:translate-x-0 group-hover/actions:pointer-events-auto focus-within:opacity-100 focus-within:translate-x-0 focus-within:pointer-events-auto">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 pl-1">
+                      {isLatestAssistant && rewriteQuickPrompts.map((prompt) => (
                         <button
-                          onClick={() => handleCopyMessage(message.id, message.content)}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-                          title={t('copyMessage')}
+                          key={`${message.id}-${prompt.value}`}
+                          type="button"
+                          onClick={() => handleQuickFollowUp(prompt.label)}
+                          className="inline-flex h-7 items-center rounded-full border border-primary/20 bg-primary/5 px-2.5 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
+                          title={t('quickRewrite')}
                         >
-                          {copiedMessageId === message.id ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                          {prompt.label}
                         </button>
-                        <button
-                          onClick={() => handleRegenerate(index)}
-                          disabled={!canRegenerate}
-                          className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-                          title={t('regenerate')}
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/45 bg-background/85 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"
-                            title="More actions"
-                          >
-                            <Ellipsis className="w-3.5 h-3.5" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" sideOffset={6} className="w-44">
-                          <DropdownMenuLabel className="text-xs">{t('messageActions')}</DropdownMenuLabel>
-                          <DropdownMenuItem onSelect={() => handleCopyMessage(message.id, message.content)}>
-                            <Copy className="w-3.5 h-3.5" />
-                            {t('copyMessage')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleRegenerate(index)} disabled={!canRegenerate}>
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            {t('regenerate')}
-                          </DropdownMenuItem>
-                          {isLatestAssistant && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuLabel className="text-xs">{t('quickRewrite')}</DropdownMenuLabel>
-                              {rewriteQuickPrompts.map((prompt) => (
-                                <DropdownMenuItem key={`${message.id}-${prompt.value}`} onSelect={() => handleQuickFollowUp(prompt.label)}>
-                                  {prompt.label}
-                                </DropdownMenuItem>
-                              ))}
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      ))}
                     </div>
                   )}
-                  <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
                 {message.role === 'user' && (
                   <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/90 to-primary flex items-center justify-center text-primary-foreground text-xl shadow-md">
