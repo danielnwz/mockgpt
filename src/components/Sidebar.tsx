@@ -12,12 +12,21 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
+  Sun,
+  Moon,
+  HelpCircle,
+  MessageSquare,
+  Leaf,
+  GraduationCap,
+  MoreHorizontal
 } from 'lucide-react';
 import { Chat, Assistant } from '../types';
 import { useState } from 'react';
-import { useTranslation } from '../contexts/LanguageContext';
+import { useLanguage, useTranslation } from '../contexts/LanguageContext';
+import { FAQModal } from './FAQModal';
 
-type View = 'home' | 'chat' | 'discovery' | 'editor' | 'assistants' | 'version' | 'chat-input-concepts';
+type View = 'home' | 'chat' | 'discovery' | 'editor' | 'assistants' | 'version' | 'chat-input-concepts' | 'tutorials';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -34,6 +43,8 @@ interface SidebarProps {
   onNewChat: () => void;
   privateMode: boolean;
   onTogglePrivateMode: () => void;
+  darkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
 export function Sidebar({
@@ -51,12 +62,29 @@ export function Sidebar({
   onNewChat,
   privateMode,
   onTogglePrivateMode,
+  darkMode,
+  onToggleDarkMode,
 }: SidebarProps) {
   const [hoveredChat, setHoveredChat] = useState<string | null>(null);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [showGlobalHistory, setShowGlobalHistory] = useState(false);
+  
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showFAQ, setShowFAQ] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
+
+  const languages = [
+    { code: 'de', name: 'Deutsch', flag: <img src="https://flagcdn.com/w20/de.png" alt="DE" className="w-4 h-3 object-cover rounded-sm" /> },
+    { code: 'en', name: 'English', flag: <img src="https://flagcdn.com/w20/gb.png" alt="EN" className="w-4 h-3 object-cover rounded-sm" /> },
+    { code: 'bar', name: 'Bayrisch', flag: <span className="text-sm leading-none">🥨</span> },
+    { code: 'fr', name: 'Französisch', flag: <img src="https://flagcdn.com/w20/fr.png" alt="FR" className="w-4 h-3 object-cover rounded-sm" /> },
+    { code: 'uk', name: 'Ukrainisch', flag: <img src="https://flagcdn.com/w20/ua.png" alt="UA" className="w-4 h-3 object-cover rounded-sm" /> },
+  ];
 
   const assistantById = new Map(assistants.map((assistant) => [assistant.id, assistant]));
   const activeAssistant = activeAssistantId ? assistantById.get(activeAssistantId) : undefined;
@@ -95,11 +123,11 @@ export function Sidebar({
         >
           <button
             onClick={() => onSelectChat(chat)}
-            className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
+            className={`w-full flex items-center gap-3 pl-3 py-3 rounded-lg transition-colors overflow-hidden ${
               currentChatId === chat.id
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-            }`}
+            } ${hoveredChat === chat.id && !collapsed ? 'pr-16' : 'pr-3'}`}
             title={collapsed ? chat.title : undefined}
           >
             {currentChatId === chat.id && (
@@ -176,14 +204,24 @@ export function Sidebar({
 
   return (
     <aside
-      className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 cursor-ew-resize relative z-20`}
-      onClick={(e) => {
-        if (!(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('input')) {
-          onToggleCollapse();
-        }
-      }}
+      className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 relative z-20`}
     >
-      <nav className="flex-1 overflow-y-auto p-2 pt-4 thin-scrollbar">
+      <div className={`h-14 flex items-center ${collapsed ? 'justify-center px-0' : 'justify-start px-4'} border-b border-sidebar-border gap-3 flex-shrink-0 cursor-ew-resize`}
+        onClick={onToggleCollapse}
+      >
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground dark:bg-[#4f7b72]'}`}>
+          <Leaf className="w-5 h-5" />
+        </div>
+        {!collapsed && <h1 className="type-section text-sidebar-foreground truncate">MOCKGPT</h1>}
+      </div>
+
+      <nav className="flex-1 overflow-y-auto p-2 pt-4 thin-scrollbar"
+        onClick={(e) => {
+          if (!(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('input')) {
+            onToggleCollapse();
+          }
+        }}
+      >
         <div className="space-y-1">
           {navItems.map((item) => {
             const isActive = item.id === 'assistants' ? currentView === 'discovery' : currentView === item.id;
@@ -347,19 +385,127 @@ export function Sidebar({
         )}
       </div>
 
-      <div className="p-3 pt-1 border-t border-sidebar-border bg-sidebar">
-        <button
-          onClick={onToggleCollapse}
-          className="w-full p-2 hover:bg-sidebar-accent rounded-lg transition-colors flex items-center justify-center"
-          title={collapsed ? t('expandSidebar') : t('collapseSidebar')}
-        >
-          {collapsed ? (
-            <ChevronRight className="w-5 h-5 text-sidebar-foreground" />
-          ) : (
+      <div className="p-2 border-t border-sidebar-border bg-sidebar relative">
+        <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'gap-1'}`}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowSettingsMenu(!showSettingsMenu);
+            }}
+            className={`flex items-center gap-3 p-2 hover:bg-sidebar-accent rounded-lg transition-colors ${collapsed ? 'w-full justify-center' : 'flex-1 justify-start'}`}
+            title={collapsed ? 'Daniel N.' : undefined}
+          >
+            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 font-medium shadow-sm">
+              DN
+            </div>
+            {!collapsed && (
+              <>
+                <div className="flex flex-col items-start overflow-hidden flex-1">
+                  <span className="text-sm font-medium text-sidebar-foreground truncate w-full text-left">Daniel N.</span>
+                </div>
+                <MoreHorizontal className="w-4 h-4 text-sidebar-foreground/50 flex-shrink-0" />
+              </>
+            )}
+          </button>
+          
+          <button
+            onClick={onToggleCollapse}
+            className={`p-2 hover:bg-sidebar-accent rounded-lg transition-colors flex-shrink-0 flex items-center justify-center ${collapsed ? 'w-full hidden' : ''}`}
+            title={collapsed ? t('expandSidebar') : t('collapseSidebar')}
+          >
             <ChevronLeft className="w-5 h-5 text-sidebar-foreground" />
-          )}
-        </button>
+          </button>
+        </div>
+
+        {showSettingsMenu && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => { setShowSettingsMenu(false); setShowLanguageMenu(false); }} />
+            <div className={`absolute bottom-full mb-2 ${collapsed ? 'left-2 w-56' : 'left-2 right-2 min-w-[200px]'} bg-card border border-border rounded-xl shadow-xl z-50 overflow-visible flex flex-col py-1`}>
+              {/* Appearance & Preferences */}
+              <button 
+                className="w-full flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  onToggleDarkMode(); 
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative w-4 h-4 text-muted-foreground flex items-center justify-center">
+                    <Sun className={`absolute w-4 h-4 transition-all duration-300 ${darkMode ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'}`} />
+                    <Moon className={`absolute w-4 h-4 transition-all duration-300 ${darkMode ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'}`} />
+                  </div>
+                  <span>{darkMode ? t('darkMode') || 'Dark Mode' : t('lightMode') || 'Light Mode'}</span>
+                </div>
+                <div className={`w-10 h-5 rounded-full transition-colors duration-300 relative flex items-center shadow-inner ${darkMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.3)] ${darkMode ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+                </div>
+              </button>
+
+              <div className="relative">
+                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={(e) => { e.stopPropagation(); setShowLanguageMenu(!showLanguageMenu); }}>
+                  <span className="text-lg leading-none w-4 flex justify-center">{languages.find(l => l.code === language)?.flag || '🌐'}</span>
+                  <span className="flex-1">{languages.find(l => l.code === language)?.name || language.toUpperCase()}</span>
+                  <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${showLanguageMenu ? 'rotate-90' : ''}`} />
+                </button>
+                {showLanguageMenu && (
+                  <div className="absolute left-full top-0 ml-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+                    {languages.map(lang => (
+                      <button key={lang.code} onClick={() => { setLanguage(lang.code as any); setShowLanguageMenu(false); setShowSettingsMenu(false); }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left">
+                        <span className="text-lg">{lang.flag}</span> {lang.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="my-1 border-t border-border" />
+
+              {/* Learning & Support */}
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => { onNavigate('tutorials' as any); setShowSettingsMenu(false); }}>
+                <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                Tutorials
+              </button>
+
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => { setShowFAQ(true); setShowSettingsMenu(false); }}>
+                <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                {t('help') || 'FAQ'}
+              </button>
+
+              <div className="my-1 border-t border-border" />
+
+              {/* Feedback & Community */}
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => window.open('https://example.com/feature-voting', '_blank')}>
+                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                Feature Voting
+              </button>
+
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => { setShowFeedback(true); setShowSettingsMenu(false); }}>
+                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                {t('feedback') || 'Feedback'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
+
+      {showFAQ && <FAQModal onClose={() => setShowFAQ(false)} />}
+      
+      {showFeedback && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFeedback(false)}>
+          <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-semibold text-foreground mb-4">{t('sendFeedback') || 'Send Feedback'}</h2>
+            <textarea
+              placeholder={t('feedbackPlaceholder') || 'Your feedback...'}
+              rows={5}
+              className="w-full px-4 py-3 border bg-input text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            />
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => { alert(t('feedbackThankYou') || 'Thank you!'); setShowFeedback(false); }} className="btn-primary flex-1">{t('submit') || 'Submit'}</button>
+              <button onClick={() => setShowFeedback(false)} className="btn-ghost">{t('cancel') || 'Cancel'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

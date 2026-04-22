@@ -4,9 +4,9 @@ import { ChatWindow } from './components/ChatWindow';
 import { AssistantDiscovery } from './components/AssistantDiscovery';
 import { AssistantEditor } from './components/AssistantEditor';
 import { Sidebar } from './components/Sidebar';
+import { TutorialsPage } from './components/TutorialsPage';
 
 
-import { Header } from './components/Header';
 import { VersionNotes } from './components/VersionNotes';
 import { SecureModeIntroModal } from './components/SecureModeIntroModal';
 import { ChatInputConceptsPage } from './components/ChatInputConceptsPage';
@@ -15,7 +15,7 @@ import { getRecommendedAssistants, getCommunityAssistants, getOwnedAssistants, g
 import { findLLMModelById, getFallbackLLMModelId } from './data/llmModels';
 import { LanguageProvider } from './contexts/LanguageContext';
 
-type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version' | 'chat-input-concepts';
+type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version' | 'chat-input-concepts' | 'tutorials';
 
 const normalizePathname = (pathname: string) =>
   pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
@@ -23,7 +23,7 @@ const normalizePathname = (pathname: string) =>
 const routeMatches = (pathname: string, route: string) =>
   normalizePathname(pathname).endsWith(route);
 
-const appPath = (route: '/' | '/version' | '/chat-input-concepts') => {
+const appPath = (route: '/' | '/version' | '/chat-input-concepts' | '/tutorials') => {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (route === '/') return base ? `${base}/` : '/';
   return `${base}${route}`;
@@ -148,6 +148,10 @@ export default function App() {
       }
       if (routeMatches(pathname, '/chat-input-concepts')) {
         setCurrentView('chat-input-concepts');
+        return;
+      }
+      if (routeMatches(pathname, '/tutorials')) {
+        setCurrentView('tutorials');
         return;
       }
       setCurrentView('home');
@@ -433,13 +437,6 @@ export default function App() {
     <LanguageProvider>
       <div className={`${darkMode ? 'dark' : ''} ${privateMode ? 'private' : ''}`}>
         <div className="flex flex-col h-screen bg-background transition-colors duration-500">
-          <Header
-            darkMode={darkMode}
-            onToggleDarkMode={() => setDarkMode(!darkMode)}
-            // @ts-ignore - Prop will be added in next step
-            privateMode={privateMode}
-          />
-
           <div className="flex flex-1 overflow-hidden">
             <Sidebar
               collapsed={sidebarCollapsed}
@@ -473,10 +470,10 @@ export default function App() {
                 }
               }}
               onNewChat={() => handleStartChat('')}
-              // @ts-ignore - Prop will be added in next step
               privateMode={privateMode}
-              // @ts-ignore - Prop will be added in next step
               onTogglePrivateMode={handleTogglePrivateMode}
+              darkMode={darkMode}
+              onToggleDarkMode={() => setDarkMode(!darkMode)}
             />
 
 
@@ -554,6 +551,10 @@ export default function App() {
 
               {currentView === 'chat-input-concepts' && (
                 <ChatInputConceptsPage />
+              )}
+
+              {currentView === 'tutorials' && (
+                <TutorialsPage onBack={navigateHome} />
               )}
             </main>
           </div>

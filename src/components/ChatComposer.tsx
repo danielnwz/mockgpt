@@ -4,17 +4,8 @@ import {
   Mic,
   Plus,
   X,
-  Search,
-  Code2,
   FileUp,
-  BarChart3,
-  ImagePlus,
   Paperclip,
-  BookOpen,
-  BriefcaseBusiness,
-  Settings,
-  Info,
-  Globe,
   Check,
   ChevronDown,
   Maximize2,
@@ -30,8 +21,6 @@ type ComposerToolId = string;
 type ComposerToolLeaf = {
   id: ComposerToolId;
   label: string;
-  icon: typeof Search;
-  description: string;
 };
 
 type ComposerToolSingle = ComposerToolLeaf & {
@@ -42,8 +31,6 @@ type ComposerToolGroup = {
   id: string;
   type: 'group';
   label: string;
-  icon: typeof Search;
-  description: string;
   tools: ComposerToolLeaf[];
 };
 
@@ -54,38 +41,34 @@ export const COMPOSER_TOOL_ITEMS: ComposerToolItem[] = [
     type: 'group',
     id: 'jira',
     label: 'Jira',
-    icon: BriefcaseBusiness,
-    description: 'Issue, sprint, and workflow tools from the Jira MCP server.',
     tools: [
-      { id: 'jira_search_issues', label: 'Search Issues', icon: Search, description: 'Find issues, bugs, epics, and tasks.' },
-      { id: 'jira_get_issue', label: 'Get Issue', icon: Search, description: 'Open issue details, status, and assignees.' },
-      { id: 'jira_create_issue', label: 'Create Issue', icon: Plus, description: 'Create new tickets directly from chat.' },
-      { id: 'jira_update_issue', label: 'Update Issue', icon: Settings, description: 'Edit issue fields, transitions, and metadata.' },
-      { id: 'jira_add_comment', label: 'Add Comment', icon: Info, description: 'Post updates and follow-ups on issues.' },
-      { id: 'jira_manage_sprints', label: 'Manage Sprints', icon: BarChart3, description: 'Inspect boards, sprints, and delivery progress.' },
+      { id: 'jira_search_issues', label: 'Search Issues' },
+      { id: 'jira_get_issue', label: 'Get Issue' },
+      { id: 'jira_create_issue', label: 'Create Issue' },
+      { id: 'jira_update_issue', label: 'Update Issue' },
+      { id: 'jira_add_comment', label: 'Add Comment' },
+      { id: 'jira_manage_sprints', label: 'Manage Sprints' },
     ],
   },
   {
     type: 'group',
     id: 'confluence',
     label: 'Confluence',
-    icon: BookOpen,
-    description: 'Knowledge base tools from the Confluence MCP server.',
     tools: [
-      { id: 'confluence_search_pages', label: 'Search Pages', icon: Search, description: 'Search knowledge base pages and spaces.' },
-      { id: 'confluence_read_page', label: 'Read Page', icon: BookOpen, description: 'Open page content and summaries.' },
-      { id: 'confluence_create_page', label: 'Create Page', icon: Plus, description: 'Draft new documentation pages.' },
-      { id: 'confluence_update_page', label: 'Update Page', icon: Settings, description: 'Edit existing pages and publish updates.' },
-      { id: 'confluence_manage_comments', label: 'Manage Comments', icon: Info, description: 'Read and add comments on pages.' },
-      { id: 'confluence_browse_space', label: 'Browse Spaces', icon: Globe, description: 'Navigate spaces, hierarchies, and docs.' },
+      { id: 'confluence_search_pages', label: 'Search Pages' },
+      { id: 'confluence_read_page', label: 'Read Page' },
+      { id: 'confluence_create_page', label: 'Create Page' },
+      { id: 'confluence_update_page', label: 'Update Page' },
+      { id: 'confluence_manage_comments', label: 'Manage Comments' },
+      { id: 'confluence_browse_space', label: 'Browse Spaces' },
     ],
   },
-  { type: 'tool', id: 'search', label: 'Search', icon: Search, description: 'Search the web and retrieve external information.' },
-  { type: 'tool', id: 'web_browser', label: 'Web Browser', icon: Globe, description: 'Open and inspect pages directly in the chat flow.' },
-  { type: 'tool', id: 'code_interpreter', label: 'Code Interpreter', icon: Code2, description: 'Run code, transform data, and generate results.' },
-  { type: 'tool', id: 'file_upload', label: 'File Upload', icon: FileUp, description: 'Attach local files and use them as chat context.' },
-  { type: 'tool', id: 'data_analysis', label: 'Data Analysis', icon: BarChart3, description: 'Analyze tabular data, trends, and datasets.' },
-  { type: 'tool', id: 'image_generation', label: 'Image Generation', icon: ImagePlus, description: 'Create new images from text prompts.' },
+  { type: 'tool', id: 'search', label: 'Search' },
+  { type: 'tool', id: 'web_browser', label: 'Web Browser' },
+  { type: 'tool', id: 'code_interpreter', label: 'Code Interpreter' },
+  { type: 'tool', id: 'file_upload', label: 'File Upload' },
+  { type: 'tool', id: 'data_analysis', label: 'Data Analysis' },
+  { type: 'tool', id: 'image_generation', label: 'Image Generation' },
 ];
 
 const isComposerToolGroup = (item: ComposerToolItem): item is ComposerToolGroup => item.type === 'group';
@@ -239,41 +222,37 @@ export function ChatComposer({
             {/* Visible active chips */}
             {visibleActiveItems.map(({ item, activeCount }) => {
               if (!isComposerToolGroup(item)) {
-                const ToolIcon = item.icon;
                 return (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => toggleComposerTool(item.id)}
-                    className="group inline-flex h-7 shrink-0 items-center rounded-full border border-primary/20 bg-primary/[0.08] px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/[0.14]"
+                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-foreground shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
                   >
-                    <ToolIcon className="h-3 w-3" />
-                    <span className="ml-1.5">{item.label}</span>
-                    <span className="inline-flex h-4 w-0 items-center justify-center overflow-hidden rounded-full bg-primary/12 text-[12px] font-semibold leading-none opacity-0 transition-all duration-200 group-hover:ml-1 group-hover:w-4 group-hover:opacity-100">
-                      X
+                    <span>{item.label}</span>
+                    <span className="inline-flex h-4 w-0 items-center justify-center overflow-hidden rounded-full text-muted-foreground opacity-0 transition-all duration-200 group-hover:ml-0.5 group-hover:w-4 group-hover:opacity-100">
+                      <X className="h-3 w-3" />
                     </span>
                   </button>
                 );
               }
 
               const activeGroupToolIds = item.tools.filter((t) => activeToolSet.has(t.id)).map((t) => t.id);
-              const GroupIcon = item.icon;
               return (
                 <HoverCard key={item.id} openDelay={100} closeDelay={120}>
                   <HoverCardTrigger asChild>
                     <button
                       type="button"
                       onClick={() => toggleComposerToolIds(activeGroupToolIds)}
-                      className="group inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/[0.08] px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/[0.14]"
+                      className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-foreground shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
                     >
-                      <GroupIcon className="h-3 w-3" />
                       <span>{item.label}</span>
-                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold leading-none">
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-muted-foreground">
                         {activeCount}
                       </span>
                     </button>
                   </HoverCardTrigger>
-                  <HoverCardContent align="start" className="w-80 rounded-2xl border-border bg-popover p-3">
+                  <HoverCardContent align="start" className="w-80 rounded-[1.1rem] border-border/80 bg-popover/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl">
                     <div className="mb-3 flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-foreground">{item.label}</p>
@@ -282,30 +261,31 @@ export function ChatComposer({
                       <button
                         type="button"
                         onClick={() => toggleComposerToolIds(getComposerItemToolIds(item))}
-                        className="inline-flex shrink-0 items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                        className="inline-flex shrink-0 items-center rounded-full border border-border/80 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-foreground transition-colors hover:border-primary/25 hover:text-primary"
                       >
                         {activeCount === item.tools.length ? 'Disable all' : 'Enable all'}
                       </button>
                     </div>
                     <div className="space-y-1.5">
                       {item.tools.map((tool) => {
-                        const ToolIcon = tool.icon;
                         const isActive = activeToolSet.has(tool.id);
                         return (
                           <button
                             key={tool.id}
                             type="button"
                             onClick={() => toggleComposerTool(tool.id)}
-                            className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${isActive ? 'border-primary/30 bg-primary/10 text-primary' : 'border-transparent bg-transparent text-foreground hover:bg-accent/60'}`}
+                            className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${isActive ? 'border-primary/20 bg-primary/[0.06] text-foreground' : 'border-transparent bg-background/20 text-foreground hover:border-border/80 hover:bg-accent/30'}`}
                           >
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                              <ToolIcon className="h-4 w-4" />
+                            <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${isActive ? 'bg-primary' : 'bg-border'}`}>
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>{tool.label}</p>
-                              <p className={`text-xs ${isActive ? 'text-primary/80' : 'text-muted-foreground'}`}>{tool.description}</p>
+                              <p className="text-sm font-medium text-foreground">{tool.label}</p>
                             </div>
-                            {isActive && <Check className="h-4 w-4 text-primary" />}
+                            {isActive && (
+                              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground">
+                                <Check className="h-3 w-3" />
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -321,58 +301,47 @@ export function ChatComposer({
                 <HoverCardTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-7 shrink-0 items-center rounded-full border border-primary/20 bg-primary/[0.06] px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/[0.12]"
+                    className="inline-flex h-8 shrink-0 items-center rounded-full border border-dashed border-border bg-background/70 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/20 hover:bg-card hover:text-foreground"
                   >
                     <span>+{hiddenActiveItems.length} more</span>
                   </button>
                 </HoverCardTrigger>
-                <HoverCardContent align="start" className="w-80 rounded-2xl border-border bg-popover p-3">
+                <HoverCardContent align="start" className="w-80 rounded-[1.1rem] border-border/80 bg-popover/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl">
                   <div className="mb-3">
                     <p className="text-sm font-semibold text-foreground">More active tools</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Hidden from the composer bar to keep the layout stable.</p>
                   </div>
                   <div className="space-y-1.5">
                     {hiddenActiveItems.map(({ item, activeCount }) => {
                       if (!isComposerToolGroup(item)) {
-                        const ToolIcon = item.icon;
                         return (
                           <button
                             key={item.id}
                             type="button"
                             onClick={() => toggleComposerTool(item.id)}
-                            className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left text-foreground transition-colors hover:bg-accent/60"
+                            className="flex w-full items-center gap-3 rounded-lg border border-transparent bg-background/20 px-3 py-2 text-left text-foreground transition-colors hover:border-border/80 hover:bg-accent/30"
                           >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                              <ToolIcon className="h-4 w-4" />
-                            </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-foreground">{item.label}</p>
-                              <p className="text-xs text-muted-foreground">{item.description}</p>
                             </div>
                             <X className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                         );
                       }
-                      const GroupIcon = item.icon;
                       const activeGroupToolIds = item.tools.filter((t) => activeToolSet.has(t.id)).map((t) => t.id);
                       return (
                         <button
                           key={item.id}
                           type="button"
                           onClick={() => toggleComposerToolIds(activeGroupToolIds)}
-                          className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-left text-foreground transition-colors hover:bg-accent/60"
+                          className="flex w-full items-center gap-3 rounded-lg border border-transparent bg-background/20 px-3 py-2 text-left text-foreground transition-colors hover:border-border/80 hover:bg-accent/30"
                         >
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <GroupIcon className="h-4 w-4" />
-                          </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium text-foreground">{item.label}</p>
-                              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary/12 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary">
+                              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-muted-foreground">
                                 {activeCount}
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground">{activeCount} tools active</p>
                           </div>
                           <X className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
@@ -388,7 +357,7 @@ export function ChatComposer({
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-primary bg-primary px-2.5 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-primary bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                 >
                   <Plus className="h-3 w-3" />
                   <span>Tool</span>
@@ -398,51 +367,47 @@ export function ChatComposer({
                 side="top"
                 align="start"
                 collisionPadding={TOOL_PICKER_VIEWPORT_PADDING}
-                className="w-[26rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border-border bg-popover p-0"
+                className="w-[23.5rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[1.35rem] border-border/80 bg-popover/95 p-0 shadow-xl shadow-black/10 backdrop-blur-xl"
               >
-                <div className="border-b border-border/60 px-4 pb-3 pt-3">
+                <div className="border-b border-border/60 px-4 pb-3 pt-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Available Tools</p>
                 </div>
-                <div className="max-h-[70vh] space-y-2 overflow-y-auto p-2">
+                <div className="max-h-[68vh] space-y-2 overflow-y-auto p-2.5">
                   {availableComposerItems.map((item) => {
                     if (isComposerToolGroup(item)) {
                       const groupToolIds = getComposerItemToolIds(item);
                       const activeCount = groupToolIds.filter((id) => activeToolSet.has(id)).length;
                       const isFullyActive = activeCount === groupToolIds.length;
-                      const GroupIcon = item.icon;
                       const isGroupExpanded = expandedToolGroups[item.id] ?? false;
                       return (
                         <Collapsible
                           key={item.id}
                           open={isGroupExpanded}
                           onOpenChange={(open) => setExpandedToolGroups((c) => ({ ...c, [item.id]: open }))}
-                          className={`rounded-2xl border p-3 transition-colors ${activeCount > 0 ? 'border-primary/25 bg-primary/[0.05]' : 'border-border/70 bg-background/40'}`}
+                          className={`rounded-[1rem] border transition-colors ${activeCount > 0 ? 'border-primary/20 bg-primary/[0.05]' : 'border-border/70 bg-muted/20 hover:border-border'}`}
                         >
-                          <div className="flex items-start gap-3">
-                            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${activeCount > 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                              <GroupIcon className="h-4 w-4" />
-                            </div>
+                          <div className="flex items-center gap-3 px-3 py-2.5">
+                            <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${activeCount > 0 ? 'bg-primary' : 'bg-border'}`}></div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <p className={`text-sm font-semibold ${activeCount > 0 ? 'text-primary' : 'text-foreground'}`}>{item.label}</p>
-                                <span className={`inline-flex min-w-10 items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${activeCount > 0 ? 'bg-primary/12 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                                <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                                <span className="inline-flex min-w-10 items-center justify-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                                   {activeCount}/{groupToolIds.length}
                                 </span>
                               </div>
-                              <p className={`mt-1 text-xs ${activeCount > 0 ? 'text-primary/80' : 'text-muted-foreground'}`}>{item.description}</p>
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => toggleComposerToolIds(groupToolIds)}
-                                className={`inline-flex h-8 items-center rounded-full border px-2.5 text-[11px] font-medium transition-colors ${activeCount > 0 ? 'border-primary/25 bg-primary/10 text-primary hover:bg-primary/15' : 'border-border bg-background text-foreground hover:border-primary/30 hover:text-primary'}`}
+                                className={`inline-flex h-8 items-center rounded-full border px-2.5 text-[11px] font-medium transition-colors ${activeCount > 0 ? 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/15' : 'border-border/80 bg-background/80 text-foreground hover:border-primary/25 hover:text-primary'}`}
                               >
                                 {isFullyActive ? 'Disable all' : 'Enable all'}
                               </button>
                               <CollapsibleTrigger asChild>
                                 <button
                                   type="button"
-                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border/80 bg-background/80 text-muted-foreground transition-colors hover:border-primary/25 hover:text-primary"
                                   aria-label={isGroupExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
                                 >
                                   <ChevronDown className={`h-4 w-4 transition-transform ${isGroupExpanded ? 'rotate-180' : ''}`} />
@@ -450,52 +415,56 @@ export function ChatComposer({
                               </CollapsibleTrigger>
                             </div>
                           </div>
-                          <CollapsibleContent className="pt-3">
-                            <div className="grid gap-1.5">
+                          <CollapsibleContent>
+                            <div className="ml-4 mr-3 border-l border-border/70 pl-3 pb-3 pt-1">
+                              <div className="grid gap-1.5">
                               {item.tools.map((tool) => {
-                                const ToolIcon = tool.icon;
                                 const isActive = activeToolSet.has(tool.id);
                                 return (
                                   <button
                                     key={tool.id}
                                     type="button"
                                     onClick={() => toggleComposerTool(tool.id)}
-                                    className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${isActive ? 'border-primary/30 bg-primary/10 text-primary' : 'border-transparent bg-transparent text-foreground hover:bg-accent/60'}`}
+                                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${isActive ? 'border-primary/20 bg-primary/[0.06] text-foreground' : 'border-transparent bg-background/10 text-foreground hover:border-border/80 hover:bg-accent/30'}`}
                                   >
-                                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                      <ToolIcon className="h-4 w-4" />
+                                    <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${isActive ? 'bg-primary' : 'bg-border'}`}>
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                      <p className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>{tool.label}</p>
-                                      <p className={`text-xs ${isActive ? 'text-primary/80' : 'text-muted-foreground'}`}>{tool.description}</p>
+                                      <p className="text-sm font-medium text-foreground">{tool.label}</p>
                                     </div>
-                                    {isActive && <Check className="h-4 w-4 text-primary" />}
+                                    {isActive && (
+                                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground">
+                                        <Check className="h-3 w-3" />
+                                      </span>
+                                    )}
                                   </button>
                                 );
                               })}
+                              </div>
                             </div>
                           </CollapsibleContent>
                         </Collapsible>
                       );
                     }
 
-                    const ToolIcon = item.icon;
                     const isActive = activeToolSet.has(item.id);
                     return (
                       <button
                         key={item.id}
                         type="button"
                         onClick={() => toggleComposerTool(item.id)}
-                        className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${isActive ? 'border-primary/30 bg-primary/10 text-primary' : 'border-transparent bg-transparent text-foreground hover:bg-accent/60'}`}
+                        className={`flex w-full items-center gap-3 rounded-[0.95rem] border px-3 py-2 text-left transition-colors ${isActive ? 'border-primary/20 bg-primary/[0.06] text-foreground' : 'border-border/50 bg-card/70 text-foreground hover:border-border hover:bg-accent/30'}`}
                       >
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                          <ToolIcon className="h-4 w-4" />
+                        <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${isActive ? 'bg-primary' : 'bg-border'}`}>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className={`text-sm font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>{item.label}</p>
-                          <p className={`text-xs ${isActive ? 'text-primary/80' : 'text-muted-foreground'}`}>{item.description}</p>
+                          <p className="text-sm font-medium text-foreground">{item.label}</p>
                         </div>
-                        {isActive && <Check className="h-4 w-4 text-primary" />}
+                        {isActive && (
+                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary bg-primary text-primary-foreground">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
                       </button>
                     );
                   })}
