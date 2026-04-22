@@ -65,6 +65,7 @@ export function Sidebar({
   darkMode,
   onToggleDarkMode,
 }: SidebarProps) {
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [hoveredChat, setHoveredChat] = useState<string | null>(null);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -97,6 +98,7 @@ export function Sidebar({
     : [];
   const globalChats = sortedChats;
   const isAssistantContext = currentView === 'chat' && Boolean(activeAssistantId);
+  const showCollapsedExpandButton = collapsed && isSidebarHovered;
 
   const navItems = [
     { id: 'home' as const, icon: Home, label: t('home') },
@@ -205,23 +207,51 @@ export function Sidebar({
   return (
     <aside
       className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 relative z-20`}
+      onMouseEnter={() => setIsSidebarHovered(true)}
+      onMouseLeave={() => setIsSidebarHovered(false)}
     >
-      <div className={`h-14 flex items-center ${collapsed ? 'justify-center px-0' : 'justify-start px-4'} border-b border-sidebar-border gap-3 flex-shrink-0 cursor-ew-resize`}
-        onClick={onToggleCollapse}
+      <div
+        className={`h-14 flex items-center border-b border-sidebar-border flex-shrink-0 ${
+          collapsed ? 'justify-center px-0' : 'justify-between px-4 gap-3'
+        }`}
       >
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground dark:bg-[#4f7b72]'}`}>
-          <Leaf className="w-5 h-5" />
-        </div>
-        {!collapsed && <h1 className="type-section text-sidebar-foreground truncate">MOCKGPT</h1>}
+        {collapsed ? (
+          showCollapsedExpandButton ? (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title={t('expandSidebar')}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          ) : (
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground dark:bg-[#4f7b72]'}`}>
+              <Leaf className="w-5 h-5" />
+            </div>
+          )
+        ) : (
+          <>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground dark:bg-[#4f7b72]'}`}>
+                <Leaf className="w-5 h-5" />
+              </div>
+              <h1 className="type-section text-sidebar-foreground truncate">MOCKGPT</h1>
+            </div>
+
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="p-2 hover:bg-sidebar-accent rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
+              title={t('collapseSidebar')}
+            >
+              <ChevronLeft className="w-5 h-5 text-sidebar-foreground" />
+            </button>
+          </>
+        )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-2 pt-4 thin-scrollbar"
-        onClick={(e) => {
-          if (!(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('input')) {
-            onToggleCollapse();
-          }
-        }}
-      >
+      <nav className="flex-1 overflow-y-auto p-2 pt-4 thin-scrollbar">
         <div className="space-y-1">
           {navItems.map((item) => {
             const isActive = item.id === 'assistants' ? currentView === 'discovery' : currentView === item.id;
@@ -386,13 +416,13 @@ export function Sidebar({
       </div>
 
       <div className="p-2 border-t border-sidebar-border bg-sidebar relative">
-        <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'gap-1'}`}>
+        <div className="flex items-center">
           <button
             onClick={(e) => {
               e.stopPropagation();
               setShowSettingsMenu(!showSettingsMenu);
             }}
-            className={`flex items-center gap-3 p-2 hover:bg-sidebar-accent rounded-lg transition-colors ${collapsed ? 'w-full justify-center' : 'flex-1 justify-start'}`}
+            className={`flex items-center gap-3 p-2 hover:bg-sidebar-accent rounded-lg transition-colors ${collapsed ? 'w-full justify-center' : 'w-full justify-start'}`}
             title={collapsed ? 'Daniel N.' : undefined}
           >
             <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 font-medium shadow-sm">
@@ -406,14 +436,6 @@ export function Sidebar({
                 <MoreHorizontal className="w-4 h-4 text-sidebar-foreground/50 flex-shrink-0" />
               </>
             )}
-          </button>
-          
-          <button
-            onClick={onToggleCollapse}
-            className={`p-2 hover:bg-sidebar-accent rounded-lg transition-colors flex-shrink-0 flex items-center justify-center ${collapsed ? 'w-full hidden' : ''}`}
-            title={collapsed ? t('expandSidebar') : t('collapseSidebar')}
-          >
-            <ChevronLeft className="w-5 h-5 text-sidebar-foreground" />
           </button>
         </div>
 
