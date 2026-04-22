@@ -246,7 +246,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
 
         {/* Step: Initial Choice */}
         {creationStep === 'initial' && (
-          <div className="px-10 py-12 flex flex-col min-h-full">
+          <div className="px-6 py-6 sm:px-8 sm:py-8 flex flex-col min-h-full">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-3xl font-bold tracking-tight text-foreground">Create Assistant</h2>
@@ -310,7 +310,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
 
         {/* Step: AI Input */}
         {creationStep === 'ai-input' && (
-          <div className="px-10 py-12 flex flex-col min-h-full">
+          <div className="px-6 py-6 sm:px-8 sm:py-8 flex flex-col min-h-full">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-start gap-3">
                 <button
@@ -399,7 +399,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
 
         {/* Step: Form (Existing) */}
         {creationStep === 'form' && (
-          <div className="px-10 py-12">
+          <div className="px-6 py-6 sm:px-8 sm:py-8">
             <div className="flex items-center justify-between mb-6 relative">
               <div className="context-halo -translate-x-6 -translate-y-4" />
               <div className="flex items-center gap-3">

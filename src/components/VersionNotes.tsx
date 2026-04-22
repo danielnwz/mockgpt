@@ -7,7 +7,7 @@ interface VersionNotesProps {
 export function VersionNotes({ onBack }: VersionNotesProps) {
   return (
     <div className="h-full flex flex-col bg-card/60 backdrop-blur-sm">
-      <div className="px-8 py-6 bg-card border-b">
+      <div className="px-6 py-4 lg:px-8 lg:py-5 bg-card border-b">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="type-title text-foreground">What is new</h2>
@@ -23,7 +23,7 @@ export function VersionNotes({ onBack }: VersionNotesProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className="flex-1 overflow-y-auto px-6 py-5 lg:px-8 lg:py-6">
         <div className="space-y-6 max-w-3xl">
           <div className="surface-card p-5">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">

@@ -64,9 +64,9 @@ export function HomePage({
 
   return (
     <div className="h-full overflow-y-auto thin-scrollbar">
-      <div className="min-h-full flex flex-col items-center justify-start p-8 bg-transparent">
-        <div className="w-full max-w-6xl space-y-8 flex-1 mt-10">
-          <div className="relative text-center space-y-3 mt-10">
+      <div className="min-h-full flex flex-col items-center justify-start px-6 py-6 lg:px-8 lg:py-7 bg-transparent">
+        <div className="w-full max-w-6xl space-y-8 flex-1">
+          <div className="relative text-center space-y-3 pt-2">
             <div className="context-halo" />
             <h1 className="type-display pb-1 flex items-center justify-center gap-2">
               <span className="text-gradient-premium">{greetingText}</span>
@@ -124,7 +124,7 @@ export function HomePage({
 
         </div>
 
-        <div className="w-full max-w-6xl mt-10">
+        <div className="w-full max-w-6xl mt-8">
           <div className="border-t border-border/60 pt-3">
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
               <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">

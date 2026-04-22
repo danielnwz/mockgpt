@@ -99,10 +99,10 @@ export function AssistantDiscovery({
     <div className="h-full flex relative overflow-hidden bg-background/50">
       {/* Main Content Area */}
       <div className="flex-1 h-full overflow-y-auto w-full thin-scrollbar">
-        <div className="max-w-[1800px] mx-auto p-4 sm:p-8 lg:p-12">
+        <div className="max-w-[1800px] mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
 
           {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2 flex items-center gap-2">
                 Discover Assistants
@@ -124,7 +124,7 @@ export function AssistantDiscovery({
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="sticky top-0 z-10 bg-background py-4 mb-6 border-b border-border -mx-4 px-4 sm:mx-0 sm:px-0 sm:bg-transparent sm:border-none sm:relative">
+          <div className="sticky top-0 z-10 bg-background py-3 mb-5 border-b border-border -mx-4 px-4 sm:mx-0 sm:px-0 sm:bg-transparent sm:border-none sm:relative">
             <div className="flex flex-col xl:flex-row gap-4 xl:items-center justify-between">
               {/* Search Bar - Flex Grow */}
               <div className="relative flex-1 min-w-0">

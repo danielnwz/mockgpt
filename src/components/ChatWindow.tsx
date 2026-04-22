@@ -187,12 +187,12 @@ export function ChatWindow({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className={`group inline-flex h-[42px] min-w-[116px] items-center gap-2.5 rounded-2xl border px-3 py-2 text-left shadow-sm backdrop-blur-sm transition-all hover:-translate-y-[1px] hover:shadow-md ${contextWindowTone.surface}`}
+          className={`group inline-flex h-10 min-w-[108px] items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left shadow-sm backdrop-blur-sm transition-all hover:-translate-y-[1px] hover:shadow-md ${contextWindowTone.surface}`}
           title="Approximate context window usage"
         >
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/75">
-              <svg className="h-5.5 w-5.5 -rotate-90" viewBox="0 0 24 24" aria-hidden="true">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border/70 bg-background/75">
+              <svg className="h-5 w-5 -rotate-90" viewBox="0 0 24 24" aria-hidden="true">
                 <circle
                   cx="12"
                   cy="12"
@@ -216,11 +216,11 @@ export function ChatWindow({
                 />
               </svg>
             </div>
-            <span className={`shrink-0 text-xs font-semibold ${contextWindowTone.accent}`}>
+            <span className={`shrink-0 text-[11px] font-semibold ${contextWindowTone.accent}`}>
               {contextWindow.usagePercent}%
             </span>
           </div>
-          <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-80 transition-colors group-hover:text-foreground" />
+          <Info className="h-3 w-3 shrink-0 text-muted-foreground opacity-80 transition-colors group-hover:text-foreground" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 rounded-2xl border-border bg-popover p-4">
@@ -329,15 +329,15 @@ export function ChatWindow({
       <div className="flex-1 flex flex-col bg-card/80 backdrop-blur-sm relative transition-all duration-300">
         {/* Chat Header with Assistant Info */}
         {assistant && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-transparent">
+          <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 bg-transparent">
             <div
-              className="flex items-center gap-3 flex-1 cursor-pointer hover:bg-accent/40 rounded-xl p-2 -ml-2 transition-colors group"
+              className="flex items-center gap-2.5 flex-1 cursor-pointer hover:bg-accent/40 rounded-lg px-2 py-1.5 -ml-2 transition-colors group"
               onClick={() => setShowAssistantDetails(true)}
             >
-              <span className="text-3xl group-hover:scale-105 transition-transform">{assistant.icon}</span>
-              <div>
-                <h2 className="type-section text-foreground group-hover:text-primary transition-colors">{assistant.name}</h2>
-                <p className="type-muted line-clamp-1 max-w-md">{assistant.description}</p>
+              <span className="text-[1.7rem] leading-none group-hover:scale-105 transition-transform">{assistant.icon}</span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold leading-tight text-foreground group-hover:text-primary transition-colors">{assistant.name}</h2>
+                <p className="text-xs text-muted-foreground line-clamp-1 max-w-md leading-snug">{assistant.description}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -346,7 +346,7 @@ export function ChatWindow({
               <div className="relative">
                 <button
                   onClick={() => setShowLLMMenu(!showLLMMenu)}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border font-medium ${privateMode
+                  className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors border font-medium ${privateMode
                     ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20'
                     : 'bg-secondary/40 text-secondary-foreground border-border hover:bg-secondary/60'
                     }`}
@@ -438,18 +438,18 @@ export function ChatWindow({
                       setShowSettings(true);
                     }
                   }}
-                  className="p-2 hover:bg-accent rounded-lg transition-colors border border-transparent hover:border-border"
+                  className="p-1.5 hover:bg-accent rounded-lg transition-colors border border-transparent hover:border-border"
                   title="Edit Assistant"
                 >
-                  <Settings className="w-5 h-5 text-muted-foreground" />
+                  <Settings className="w-4.5 h-4.5 text-muted-foreground" />
                 </button>
               ) : (
                 <button
                   onClick={() => setShowAssistantDetails(true)}
-                  className={`p-2 hover:bg-accent rounded-lg transition-colors border ${showAssistantDetails ? 'bg-accent border-border text-foreground' : 'border-transparent hover:border-border text-muted-foreground'}`}
+                  className={`p-1.5 hover:bg-accent rounded-lg transition-colors border ${showAssistantDetails ? 'bg-accent border-border text-foreground' : 'border-transparent hover:border-border text-muted-foreground'}`}
                   title="Assistant Info"
                 >
-                  <Info className="w-5 h-5" />
+                  <Info className="w-4.5 h-4.5" />
                 </button>
               )}
             </div>
@@ -458,15 +458,15 @@ export function ChatWindow({
 
         {/* Simple Chat Header (no assistant) */}
         {!assistant && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border/60 bg-transparent">
-            <h2 className="type-section text-foreground">{t('chat')}</h2>
+          <div className="flex items-center justify-between px-5 py-2.5 border-b border-border/60 bg-transparent">
+            <h2 className="text-lg font-semibold text-foreground">{t('chat')}</h2>
             <div className="flex items-center gap-2">
               {contextWindowBadge}
               {/* LLM Selector */}
               <div className="relative">
                 <button
                   onClick={() => setShowLLMMenu(!showLLMMenu)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-secondary/40 text-secondary-foreground rounded-lg hover:bg-secondary/60 transition-colors border border-border font-medium"
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-secondary/40 text-secondary-foreground rounded-lg hover:bg-secondary/60 transition-colors border border-border font-medium"
                   title={t('selectAIModel')}
                 >
                   {llmModels.find(m => m.id === selectedLLM)?.name || (privateMode ? 'MUC-GPT Secure' : 'GPT-4 (Standard)')}
@@ -631,7 +631,8 @@ export function ChatWindow({
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6">
           {chat.messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
               <div className="text-center space-y-4 max-w-2xl">
@@ -775,6 +776,7 @@ export function ChatWindow({
             );
           })}
           <div ref={messagesEndRef} />
+          </div>
         </div>
 
         {/* Input */}

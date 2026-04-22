@@ -7,18 +7,18 @@ interface TutorialsPageProps {
 export function TutorialsPage({ onBack }: TutorialsPageProps) {
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
-      <header className="h-14 border-b border-border flex items-center px-4 gap-3 flex-shrink-0 bg-card/50 backdrop-blur">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-medium text-foreground">Tutorials</h1>
-      </header>
-
-      <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+      <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-8 lg:py-7">
         <div className="max-w-4xl mx-auto space-y-8">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-accent rounded-lg transition-colors text-muted-foreground"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-lg font-medium text-foreground">Tutorials</h1>
+          </div>
+
           <div>
             <h2 className="text-2xl font-semibold text-foreground mb-2">Learn how to use MOCKGPT</h2>
             <p className="text-muted-foreground">Watch these tutorials to get the most out of your AI assistants.</p>
