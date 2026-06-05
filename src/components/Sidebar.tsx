@@ -45,6 +45,8 @@ interface SidebarProps {
   onTogglePrivateMode: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  showAssistantIcons: boolean;
+  onToggleAssistantIcons: () => void;
 }
 
 export function Sidebar({
@@ -64,6 +66,8 @@ export function Sidebar({
   onTogglePrivateMode,
   darkMode,
   onToggleDarkMode,
+  showAssistantIcons,
+  onToggleAssistantIcons,
 }: SidebarProps) {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [hoveredChat, setHoveredChat] = useState<string | null>(null);
@@ -449,6 +453,22 @@ export function Sidebar({
                 </div>
                 <div className={`w-10 h-5 rounded-full transition-colors duration-300 relative flex items-center shadow-inner ${darkMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}>
                   <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.3)] ${darkMode ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+                </div>
+              </button>
+
+              <button
+                className="w-full flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleAssistantIcons();
+                }}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Sparkles className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span className="truncate">{t('assistantIcons')}</span>
+                </div>
+                <div className={`w-10 h-5 rounded-full transition-colors duration-300 relative flex items-center shadow-inner ${showAssistantIcons ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.3)] ${showAssistantIcons ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
                 </div>
               </button>
 

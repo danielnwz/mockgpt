@@ -106,6 +106,9 @@ export default function App() {
 
 
   const [darkMode, setDarkMode] = useState(false);
+  const [showAssistantIcons, setShowAssistantIcons] = useState(() =>
+    localStorage.getItem('showAssistantIcons') !== 'false'
+  );
   const [showTerms, setShowTerms] = useState(false);
   const [showSecureIntro, setShowSecureIntro] = useState(false);
 
@@ -182,6 +185,10 @@ export default function App() {
     document.body.classList.toggle('dark', darkMode);
     document.body.classList.toggle('private', privateMode);
   }, [darkMode, privateMode]);
+
+  useEffect(() => {
+    localStorage.setItem('showAssistantIcons', String(showAssistantIcons));
+  }, [showAssistantIcons]);
 
   useEffect(() => {
     return () => {
@@ -485,6 +492,8 @@ export default function App() {
               onTogglePrivateMode={handleTogglePrivateMode}
               darkMode={darkMode}
               onToggleDarkMode={() => setDarkMode(!darkMode)}
+              showAssistantIcons={showAssistantIcons}
+              onToggleAssistantIcons={() => setShowAssistantIcons((current) => !current)}
             />
 
 
@@ -534,6 +543,7 @@ export default function App() {
                     }}
                     onToggleSubscribe={handleToggleSubscribe}
                     subscribedIds={subscribedIds}
+                    showAssistantIcons={showAssistantIcons}
                   />
 
                   {currentView === 'editor' && (

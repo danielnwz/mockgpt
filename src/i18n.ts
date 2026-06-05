@@ -36,6 +36,7 @@ const translations = {
     collapseSidebar: 'Collapse Sidebar',
     lightMode: 'Light Mode',
     darkMode: 'Dark Mode',
+    assistantIcons: 'Assistant icons',
     feedbackPlaceholder: 'Your feedback...',
     feedbackThankYou: 'Thanks for your feedback!',
     aboutDescription: 'About this application...',
@@ -269,6 +270,9 @@ const translations = {
     thisAssistant: 'Dieser Assistent',
     allChats: 'Alle Chats',
     noChatsForAssistant: 'Noch keine Chats fuer diesen Assistenten',
+    lightMode: 'Heller Modus',
+    darkMode: 'Dunkler Modus',
+    assistantIcons: 'Assistenten-Icons',
 
     // Assistant Panel
     subscribed: 'Abonniert',

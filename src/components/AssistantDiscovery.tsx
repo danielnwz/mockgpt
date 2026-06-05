@@ -1,4 +1,4 @@
-import { Star, Plus, Search, FileUp, X, Check, ChevronDown, Trash2 } from 'lucide-react';
+import { Star, Plus, Search, FileUp, X, Check, ChevronDown, Trash2, Lock, Users, Globe2 } from 'lucide-react';
 import { Assistant } from '../types';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -18,6 +18,7 @@ interface AssistantDiscoveryProps {
   onCreateNew: () => void;
   onToggleSubscribe: (assistantId: string) => void;
   subscribedIds: string[];
+  showAssistantIcons: boolean;
 }
 
 const formatToolName = (tool: string): string => {
@@ -37,6 +38,7 @@ export function AssistantDiscovery({
   onCreateNew,
   onToggleSubscribe,
   subscribedIds,
+  showAssistantIcons,
 }: AssistantDiscoveryProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -143,17 +145,12 @@ export function AssistantDiscovery({
     return 'Last updated';
   };
 
-  const scrollToSection = (sectionRef: React.RefObject<HTMLElement>) => {
-    sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const renderSortControl = (
     menu: 'personal' | 'community',
     value: SortBy,
     onChange: (nextSort: SortBy) => void
   ) => (
     <div className="relative z-20 flex shrink-0 items-center gap-2">
-      <span className="hidden whitespace-nowrap text-sm font-medium text-muted-foreground sm:inline">Sort by:</span>
       <button
         type="button"
         onClick={() => setOpenSortMenu(openSortMenu === menu ? null : menu)}
@@ -190,63 +187,127 @@ export function AssistantDiscovery({
   const gridClassName = `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${selectedAssistant ? 'lg:grid-cols-2 xl:grid-cols-3' : ''
     } gap-3 sm:gap-4 transition-all duration-300`;
 
+  const formatSubscriberCount = (count?: number) => {
+    if (count === undefined) return null;
+    if (count <= 0) return null;
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+    }
+    return count.toLocaleString();
+  };
+
+  const getAssistantMeta = (assistant: Assistant) => {
+    const author = isOwnedAssistant(assistant) ? 'You' : assistant.createdBy;
+    if (!assistant.isPublic) {
+      return { author, status: 'Private', statusType: 'private' as const };
+    }
+
+    const subscriberCount = formatSubscriberCount(assistant.subscriptionCount);
+    if (subscriberCount) {
+      return { author, status: subscriberCount, statusType: 'subscribers' as const };
+    }
+
+    return { author, status: 'Public', statusType: 'public' as const };
+  };
+
   const renderAssistantCard = (assistant: Assistant) => {
     const isOwn = isOwnedAssistant(assistant);
     const isSubbed = isSubscribedAssistant(assistant);
-    const badge = isOwn ? t('yours') : isSubbed ? t('subscribed') : 'Community';
+    const meta = getAssistantMeta(assistant);
 
     return (
       <div
         key={assistant.id}
         onClick={() => setSelectedAssistant(assistant)}
-        className={`group relative flex min-h-[154px] cursor-pointer flex-col overflow-hidden rounded-xl border bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md ${selectedAssistant?.id === assistant.id
+        className={`group relative flex ${showAssistantIcons ? 'min-h-[124px]' : 'min-h-[92px]'} cursor-pointer flex-col overflow-hidden rounded-xl border bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md ${selectedAssistant?.id === assistant.id
           ? 'border-primary ring-2 ring-primary/20'
           : 'border-border/70'
           } ${assistant.deletedByOwner ? 'opacity-70 grayscale-[0.2]' : ''}`}
       >
-        <div className="flex h-full flex-col p-3.5">
-          <div className="mb-2.5 flex items-start justify-between gap-3">
-            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-[1.35rem] ${assistant.deletedByOwner ? 'grayscale' : ''}`}>
-              {assistant.icon}
-            </div>
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className="rounded-md border border-border/70 bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                {badge}
-              </span>
-              {!isOwn && (
-                <button
-                  type="button"
-                  aria-label={isSubbed ? t('unsubscribe') : t('subscribe')}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleSubscribe(assistant.id);
-                  }}
-                  className={`rounded-md p-1.5 transition-colors ${isSubbed
-                    ? 'bg-yellow-400/10 text-yellow-500'
-                    : 'text-muted-foreground/40 hover:bg-yellow-400/10 hover:text-yellow-500'
-                    }`}
-                >
-                  <Star className={`h-4 w-4 ${isSubbed ? 'fill-current' : ''}`} />
-                </button>
-              )}
-            </div>
-          </div>
+        <div className="flex h-full flex-col px-3.5 pb-2.5 pt-3">
+          {showAssistantIcons ? (
+            <>
+              <div className="mb-2 flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/15 text-[1.1rem] ring-1 ring-slate-200/80 dark:ring-slate-600/35 ${assistant.deletedByOwner ? 'grayscale' : ''}`}>
+                    {assistant.icon}
+                  </div>
+                  <h3 className="line-clamp-2 min-w-0 text-sm font-semibold leading-5 text-foreground group-hover:text-primary" title={assistant.name}>
+                    {assistant.name}
+                  </h3>
+                </div>
+                {!isOwn && (
+                  <button
+                    type="button"
+                    aria-label={isSubbed ? t('unsubscribe') : t('subscribe')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSubscribe(assistant.id);
+                    }}
+                    className={`shrink-0 rounded-md p-1 opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100 ${isSubbed
+                      ? 'text-yellow-500'
+                      : 'text-muted-foreground/40 hover:text-yellow-500'
+                      }`}
+                  >
+                    <Star className={`h-4 w-4 ${isSubbed ? 'fill-current' : ''}`} />
+                  </button>
+                )}
+              </div>
 
-          <h3 className="mb-1 line-clamp-2 text-sm font-semibold leading-5 text-foreground group-hover:text-primary" title={assistant.name}>
-            {assistant.name}
-          </h3>
-          <p className="line-clamp-2 text-xs leading-[1.15rem] text-muted-foreground">
-            {assistant.description}
-          </p>
+              <p className="mb-2 line-clamp-2 text-xs leading-4 text-muted-foreground">
+                {assistant.description}
+              </p>
+            </>
+          ) : (
+            <div className="mb-1 flex items-start justify-between gap-3">
+              <h3 className="line-clamp-2 pt-1 text-sm font-semibold leading-5 text-foreground group-hover:text-primary" title={assistant.name}>
+                {assistant.name}
+              </h3>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {!isOwn && (
+                  <button
+                    type="button"
+                    aria-label={isSubbed ? t('unsubscribe') : t('subscribe')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSubscribe(assistant.id);
+                    }}
+                    className={`rounded-md p-1.5 opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100 ${isSubbed
+                      ? 'text-yellow-500'
+                      : 'text-muted-foreground/40 hover:text-yellow-500'
+                      }`}
+                  >
+                    <Star className={`h-4 w-4 ${isSubbed ? 'fill-current' : ''}`} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {!showAssistantIcons && (
+            <p className="mb-2 line-clamp-2 text-xs leading-4 text-muted-foreground">
+              {assistant.description}
+            </p>
+          )}
 
-          <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
-            <span className="truncate">{assistant.createdBy}</span>
-            {assistant.deletedByOwner && (
-              <span className="inline-flex shrink-0 items-center gap-1 font-medium">
-                <Trash2 className="h-3 w-3" /> Deleted
+          <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/20 pt-2.5 text-[11px] leading-4 text-muted-foreground/35">
+            <span className="min-w-0 truncate">{meta.author}</span>
+            {meta.status && (
+              <span className="inline-flex shrink-0 items-center gap-1">
+                {meta.statusType === 'private' && <Lock className="h-3 w-3" />}
+                {meta.statusType === 'subscribers' && <Users className="h-3 w-3" />}
+                {meta.statusType === 'public' && <Globe2 className="h-3 w-3" />}
+                {meta.status}
               </span>
             )}
           </div>
+
+          {assistant.deletedByOwner && (
+            <div className="mt-2 flex items-center justify-end text-[11px] text-muted-foreground">
+              <span className="inline-flex shrink-0 items-center gap-1 font-medium">
+                <Trash2 className="h-3 w-3" /> Deleted
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -255,10 +316,10 @@ export function AssistantDiscovery({
   return (
     <div className="relative flex h-full overflow-hidden bg-background/50">
       <div className="thin-scrollbar h-full w-full flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1180px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="mx-auto max-w-[1180px] px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
+          <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="mb-1 text-3xl font-bold tracking-tight text-foreground">
                 Assistant Library
               </h1>
               <p className="max-w-2xl text-lg text-muted-foreground">
@@ -266,7 +327,10 @@ export function AssistantDiscovery({
               </p>
             </div>
             <div className="flex gap-3">
-              <button onClick={handleImport} className="btn-secondary shadow-sm">
+              <button
+                onClick={handleImport}
+                className="btn border border-border/70 bg-card/60 text-muted-foreground shadow-none transition-colors hover:border-primary/30 hover:bg-accent hover:text-foreground"
+              >
                 <FileUp className="h-4 w-4" />
                 {t('import')}
               </button>
@@ -277,7 +341,7 @@ export function AssistantDiscovery({
             </div>
           </div>
 
-          <div className="sticky top-0 z-10 -mx-4 mb-6 border-b border-border bg-background px-4 py-3 sm:relative sm:mx-0 sm:border-none sm:bg-transparent sm:px-0">
+          <div className="sticky top-0 z-10 -mx-4 mb-5 border-b border-border bg-background px-4 py-2.5 sm:relative sm:mx-0 sm:border-none sm:bg-transparent sm:px-0">
             <div className="flex flex-col gap-4">
               <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -286,7 +350,7 @@ export function AssistantDiscovery({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('searchAssistants')}
-                  className="w-full rounded-xl border-2 border-border/70 bg-background py-3 pl-10 pr-10 text-sm outline-none shadow-sm transition-all placeholder:text-muted-foreground hover:border-primary/40 focus:border-primary"
+                  className="w-full rounded-xl border border-border/70 bg-card/70 py-2.5 pl-10 pr-10 text-sm outline-none shadow-none transition-all placeholder:text-muted-foreground hover:border-primary/30 focus:border-primary/60 focus:bg-background"
                 />
                 {searchQuery && (
                   <button
@@ -302,26 +366,19 @@ export function AssistantDiscovery({
             </div>
           </div>
 
-          <div className="space-y-7 pb-20">
+          <div className="space-y-6 pb-20">
             <section ref={personalSectionRef} className="scroll-mt-28">
               <div className="mb-3 flex flex-col gap-3">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">My assistants</h2>
+                    <h2 className="text-lg font-semibold text-foreground">Personal assistants</h2>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(communitySectionRef)}
-                    className="w-fit text-sm font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
-                  >
-                    Browse community assistants
-                  </button>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex w-fit rounded-lg border border-border bg-muted/30 p-1">
                     {([
                       ['all', 'All'],
-                      ['owned', t('yours')],
+                      ['owned', 'Created'],
                       ['subscribed', t('subscribed')],
                     ] as const).map(([filterValue, label]) => (
                       <button
@@ -370,15 +427,6 @@ export function AssistantDiscovery({
                           Show less
                         </button>
                       )}
-                      {hiddenPersonalCount > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => scrollToSection(communitySectionRef)}
-                          className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary hover:underline"
-                        >
-                          Or continue to Community assistants
-                        </button>
-                      )}
                     </div>
                   )}
                 </>
@@ -395,9 +443,6 @@ export function AssistantDiscovery({
                 <div>
                   <div className="mb-1 flex items-center gap-2">
                     <h2 className="text-lg font-semibold text-foreground">Community assistants</h2>
-                    <span className="rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
-                      Explore
-                    </span>
                   </div>
                 </div>
                 {renderSortControl('community', communitySortBy, setCommunitySortBy)}
