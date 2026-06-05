@@ -227,7 +227,7 @@ export function ChatComposer({
                     key={item.id}
                     type="button"
                     onClick={() => toggleComposerTool(item.id)}
-                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-foreground shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
+                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-primary shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
                   >
                     <span>{item.label}</span>
                     <span className="inline-flex h-4 w-0 items-center justify-center overflow-hidden rounded-full text-muted-foreground opacity-0 transition-all duration-200 group-hover:ml-0.5 group-hover:w-4 group-hover:opacity-100">
@@ -244,10 +244,10 @@ export function ChatComposer({
                     <button
                       type="button"
                       onClick={() => toggleComposerToolIds(activeGroupToolIds)}
-                      className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-foreground shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
+                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-primary shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
                     >
                       <span>{item.label}</span>
-                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-muted-foreground">
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary">
                         {activeCount}
                       </span>
                     </button>
@@ -301,12 +301,12 @@ export function ChatComposer({
                 <HoverCardTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-8 shrink-0 items-center rounded-full border border-dashed border-border bg-background/70 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/20 hover:bg-card hover:text-foreground"
+                    className="inline-flex h-8 shrink-0 items-center rounded-full border border-dashed border-border bg-background/70 px-3 text-xs font-medium text-primary transition-colors hover:border-primary/20 hover:bg-card"
                   >
                     <span>+{hiddenActiveItems.length} more</span>
                   </button>
                 </HoverCardTrigger>
-                <HoverCardContent align="start" className="w-80 rounded-[1.1rem] border-border/80 bg-popover/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl">
+                <HoverCardContent side="top" align="start" className="w-80 rounded-[1.1rem] border-border/80 bg-popover/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl">
                   <div className="mb-3">
                     <p className="text-sm font-semibold text-foreground">More active tools</p>
                   </div>
@@ -338,7 +338,7 @@ export function ChatComposer({
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium text-foreground">{item.label}</p>
-                              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-muted-foreground">
+                              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary">
                                 {activeCount}
                               </span>
                             </div>

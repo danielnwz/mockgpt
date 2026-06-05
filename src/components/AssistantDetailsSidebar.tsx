@@ -66,7 +66,7 @@ const flattenDepartments = (items: typeof departments): { id: string; name: stri
     return result;
 };
 
-type SectionKey = 'about' | 'systemPrompt' | 'responseStyle' | 'tools' | 'examplePrompts' | 'quickPrompts' | 'technical';
+type SectionKey = 'about' | 'systemPrompt' | 'responseStyle' | 'tools' | 'starterPrompts' | 'quickPrompts' | 'technical';
 
 interface SidebarSectionProps {
     title: string;
@@ -121,7 +121,7 @@ export function AssistantDetailsSidebar({
         systemPrompt: false,
         responseStyle: false,
         tools: true,
-        examplePrompts: false,
+        starterPrompts: false,
         quickPrompts: false,
         technical: false,
     });
@@ -392,17 +392,18 @@ export function AssistantDetailsSidebar({
                         </SidebarSection>
                     )}
 
-                    {assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
+                    {assistant.starterPrompts && assistant.starterPrompts.length > 0 && (
                         <SidebarSection
-                            title="Example Messages"
+                            title="Starter Prompts"
                             icon={Sparkles}
-                            open={expandedSections.examplePrompts}
-                            onToggle={() => toggleSection('examplePrompts')}
+                            open={expandedSections.starterPrompts}
+                            onToggle={() => toggleSection('starterPrompts')}
                         >
                             <div className="space-y-2">
-                                {assistant.examplePrompts.map((prompt, i) => (
-                                    <div key={i} className="p-3 rounded-lg bg-muted/40 text-sm text-foreground/90 italic hover:bg-muted/70 transition-colors cursor-default">
-                                        "{prompt}"
+                                {assistant.starterPrompts.map((sp, i) => (
+                                    <div key={i} className="p-3 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors cursor-default flex flex-col gap-1">
+                                        <span className="text-sm font-semibold text-foreground">{sp.title}</span>
+                                        <span className="text-xs text-foreground/70 italic">"{sp.prompt}"</span>
                                     </div>
                                 ))}
                             </div>

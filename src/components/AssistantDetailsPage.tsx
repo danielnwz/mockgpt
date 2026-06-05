@@ -23,7 +23,7 @@ export const exportAssistantData = (assistant: Assistant) => {
         responseBehavior: assistant.responseBehavior,
         allowedTools: assistant.allowedTools,
         publishedDepartments: assistant.publishedDepartments,
-        examplePrompts: assistant.examplePrompts,
+        starterPrompts: assistant.starterPrompts,
         quickPrompts: assistant.quickPrompts,
         defaultLlmModel: assistant.defaultLlmModel,
     };
@@ -203,13 +203,14 @@ export function AssistantDetailsPage({
                             </div>
                         )}
 
-                        {assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
+                        {assistant.starterPrompts && assistant.starterPrompts.length > 0 && (
                             <div className="bg-card rounded-xl border p-6 shadow-sm">
-                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">Example Messages</h3>
+                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">Starter Prompts</h3>
                                 <div className="space-y-3">
-                                    {assistant.examplePrompts.map((prompt, i) => (
-                                        <div key={i} className="p-3 rounded-lg bg-background border border-border/60 text-sm text-foreground italic hover:border-primary/40 transition-colors">
-                                            "{prompt}"
+                                    {assistant.starterPrompts.map((sp, i) => (
+                                        <div key={i} className="p-3 rounded-lg bg-background border border-border/60 hover:border-primary/40 transition-colors flex flex-col gap-1">
+                                            <span className="text-sm font-semibold text-foreground">{sp.title}</span>
+                                            <span className="text-xs text-muted-foreground italic">"{sp.prompt}"</span>
                                         </div>
                                     ))}
                                 </div>

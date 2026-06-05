@@ -288,9 +288,9 @@ export function ChatWindow({
   };
 
   const isOwner = assistant && (userAssistants?.some(a => a.id === assistant.id) || assistant.createdBy === 'user');
-  const hasExamplePrompts = Boolean(assistant?.examplePrompts?.length);
-  const handleStartWithExample = (prompt: string) => {
-    onSendMessage(prompt);
+  const hasStarterPrompts = Boolean(assistant?.starterPrompts?.length);
+  const handleStartWithStarterPrompt = (promptText: string) => {
+    onSendMessage(promptText);
   };
 
   const handleQuickFollowUp = (prompt: string) => {
@@ -652,29 +652,30 @@ export function ChatWindow({
                       {assistant.name}
                     </h2>
                     <p className="text-sm text-muted-foreground/70 mt-1 animate-fade-up" style={{ animationDelay: '120ms' }}>
-                      {hasExamplePrompts ? 'Choose an example to start or type your own message.' : 'Start typing to begin.'}
+                      {hasStarterPrompts ? 'Choose a starter prompt to begin or type your own message.' : 'Start typing to begin.'}
                     </p>
 
-                    {/* Example Prompts */}
-                    {assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
+                    {/* Starter Prompts */}
+                    {assistant.starterPrompts && assistant.starterPrompts.length > 0 && (
                       <div className="mt-6 w-full max-w-2xl">
                         <div className="text-center space-y-2 mb-4">
-                          <h3 className="text-lg font-semibold text-foreground">Example Messages</h3>
+                          <h3 className="text-lg font-semibold text-foreground">Starter Prompts</h3>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          {assistant.examplePrompts.map((prompt, index) => (
+                          {assistant.starterPrompts.map((starterPrompt, index) => (
                             <button
                               key={index}
-                              onClick={() => handleStartWithExample(prompt)}
-                              className="group rounded-2xl border bg-primary/10 px-5 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md animate-fade-up"
+                              onClick={() => handleStartWithStarterPrompt(starterPrompt.prompt)}
+                              className="group rounded-2xl border bg-primary/10 px-5 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md animate-fade-up flex flex-col gap-1"
                               style={{ animationDelay: `${index * 60}ms` }}
                             >
                               <div className="flex items-start justify-between gap-3">
-                                <span className="text-sm font-medium text-foreground">{prompt}</span>
+                                <span className="text-sm font-semibold text-foreground">{starterPrompt.title}</span>
                                 <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary opacity-0 transition-opacity group-hover:opacity-100">
                                   ↗
                                 </span>
                               </div>
+                              <span className="text-xs text-muted-foreground line-clamp-2">{starterPrompt.prompt}</span>
                             </button>
                           ))}
                         </div>

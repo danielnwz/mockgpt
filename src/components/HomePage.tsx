@@ -69,7 +69,7 @@ export function HomePage({
           <div className="relative text-center space-y-3 pt-6 lg:pt-10">
             <div className="context-halo" />
             <h1 className="type-display pb-1 flex items-center justify-center gap-2">
-              <span className="text-gradient-premium">{greetingText}</span>
+              <span className="text-foreground">{greetingText}</span>
               {greetingEmoji && <span className="inline-block text-foreground drop-shadow-sm">{greetingEmoji}</span>}
             </h1>
             <p className="text-xl text-muted-foreground">

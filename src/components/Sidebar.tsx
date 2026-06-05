@@ -17,7 +17,6 @@ import {
   Moon,
   HelpCircle,
   MessageSquare,
-  Leaf,
   GraduationCap,
   MoreHorizontal
 } from 'lucide-react';
@@ -25,6 +24,7 @@ import { Chat, Assistant } from '../types';
 import { useState } from 'react';
 import { useLanguage, useTranslation } from '../contexts/LanguageContext';
 import { FAQModal } from './FAQModal';
+import logo from '../img/edelweiss_pride.svg';
 
 type View = 'home' | 'chat' | 'discovery' | 'editor' | 'assistants' | 'version' | 'chat-input-concepts' | 'tutorials';
 
@@ -70,7 +70,7 @@ export function Sidebar({
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [showGlobalHistory, setShowGlobalHistory] = useState(false);
-  
+
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
@@ -125,11 +125,10 @@ export function Sidebar({
         >
           <button
             onClick={() => onSelectChat(chat)}
-            className={`w-full flex items-center gap-3 pl-3 py-3 rounded-lg transition-colors overflow-hidden ${
-              currentChatId === chat.id
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-            } ${hoveredChat === chat.id && !collapsed ? 'pr-16' : 'pr-3'}`}
+            className={`w-full flex items-center gap-3 pl-3 py-3 rounded-lg transition-colors overflow-hidden ${currentChatId === chat.id
+              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+              } ${hoveredChat === chat.id && !collapsed ? 'pr-16' : 'pr-3'}`}
             title={collapsed ? chat.title : undefined}
           >
             {currentChatId === chat.id && (
@@ -211,31 +210,26 @@ export function Sidebar({
       onMouseLeave={() => setIsSidebarHovered(false)}
     >
       <div
-        className={`h-14 flex items-center border-b border-sidebar-border flex-shrink-0 ${
-          collapsed ? 'justify-center px-0' : 'justify-between px-4 gap-3'
-        }`}
+        className={`h-14 flex items-center border-b border-sidebar-border flex-shrink-0 ${collapsed ? 'justify-center px-0' : 'justify-between px-4 gap-3'
+          }`}
       >
         {collapsed ? (
           showCollapsedExpandButton ? (
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              className="w-5 h-5 rounded-lg flex items-center justify-center text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
               title={t('expandSidebar')}
             >
               <ChevronRight className="w-5 h-5" />
             </button>
           ) : (
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground'}`}>
-              <Leaf className="w-5 h-5" />
-            </div>
+            <img src={logo} alt="MOCKGPT" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
           )
         ) : (
           <>
             <div className="flex items-center gap-3 min-w-0">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${privateMode ? 'bg-primary/10 text-primary' : 'bg-primary text-primary-foreground'}`}>
-                <Leaf className="w-5 h-5" />
-              </div>
+              <img src={logo} alt="MOCKGPT" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
               <h1 className="type-section text-sidebar-foreground truncate">MOCKGPT</h1>
             </div>
 
@@ -259,11 +253,10 @@ export function Sidebar({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`relative w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-                }`}
+                className={`relative w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${isActive
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  }`}
                 title={collapsed ? item.label : undefined}
               >
                 {isActive && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-sidebar-primary" />}
@@ -347,13 +340,11 @@ export function Sidebar({
             e.stopPropagation();
             onTogglePrivateMode();
           }}
-          className={`w-full flex items-center py-3 rounded-lg transition-all duration-300 ${
-            collapsed ? 'justify-center px-0' : 'justify-start gap-3 px-3'
-          } ${
-            privateMode
+          className={`w-full flex items-center py-3 rounded-lg transition-all duration-300 ${collapsed ? 'justify-center px-0' : 'justify-start gap-3 px-3'
+            } ${privateMode
               ? 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
               : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
-          }`}
+            }`}
         >
           {privateMode ? (
             <ShieldCheck className="w-5 h-5 flex-shrink-0 text-primary" />
@@ -374,14 +365,12 @@ export function Sidebar({
 
           {!collapsed && (
             <div
-              className={`w-8 h-4 rounded-full relative transition-colors ${
-                privateMode ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
-              }`}
+              className={`w-8 h-4 rounded-full relative transition-colors ${privateMode ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-700'
+                }`}
             >
               <div
-                className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${
-                  privateMode ? 'left-[18px]' : 'left-0.5'
-                }`}
+                className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${privateMode ? 'left-[18px]' : 'left-0.5'
+                  }`}
               />
             </div>
           )}
@@ -444,11 +433,11 @@ export function Sidebar({
             <div className="fixed inset-0 z-40" onClick={() => { setShowSettingsMenu(false); setShowLanguageMenu(false); }} />
             <div className={`absolute bottom-full mb-2 ${collapsed ? 'left-2 w-56' : 'left-2 right-2 min-w-[200px]'} bg-card border border-border rounded-xl shadow-xl z-50 overflow-visible flex flex-col py-1`}>
               {/* Appearance & Preferences */}
-              <button 
-                className="w-full flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" 
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  onToggleDarkMode(); 
+              <button
+                className="w-full flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleDarkMode();
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -511,7 +500,7 @@ export function Sidebar({
       </div>
 
       {showFAQ && <FAQModal onClose={() => setShowFAQ(false)} />}
-      
+
       {showFeedback && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFeedback(false)}>
           <div className="bg-card rounded-xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>

@@ -76,27 +76,28 @@ export function ChatPreview({ assistant }: ChatPreviewProps) {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.length === 0 && assistant.examplePrompts && assistant.examplePrompts.length > 0 && (
+        {messages.length === 0 && assistant.starterPrompts && assistant.starterPrompts.length > 0 && (
           <div className="h-full flex items-center justify-center">
             <div className="w-full max-w-xl text-center space-y-6">
               <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Example Messages</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Starter Prompts</p>
                 <h4 className="text-lg font-semibold text-foreground">Try one to start the preview</h4>
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {assistant.examplePrompts.map((prompt, index) => (
+                {assistant.starterPrompts.map((starterPrompt, index) => (
                   <button
                     key={index}
-                    onClick={() => handleQuickPrompt(prompt)}
-                    className="group rounded-2xl border bg-card px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md animate-fade-up"
+                    onClick={() => handleQuickPrompt(starterPrompt.prompt)}
+                    className="group rounded-2xl border bg-card px-4 py-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md animate-fade-up flex flex-col gap-1"
                     style={{ animationDelay: `${index * 60}ms` }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-sm font-medium text-foreground">{prompt}</span>
+                    <div className="flex items-start justify-between gap-3 w-full">
+                      <span className="text-sm font-semibold text-foreground">{starterPrompt.title}</span>
                       <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary opacity-0 transition-opacity group-hover:opacity-100">
                         ↗
                       </span>
                     </div>
+                    <span className="text-xs text-muted-foreground line-clamp-2">{starterPrompt.prompt}</span>
                   </button>
                 ))}
               </div>

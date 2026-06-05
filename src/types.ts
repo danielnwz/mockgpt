@@ -19,6 +19,11 @@ export interface Chat {
 
 export type ResponseBehavior = 'precise' | 'balanced' | 'creative';
 
+export interface StarterPrompt {
+  title: string;
+  prompt: string;
+}
+
 export interface Assistant {
   id: string;
   name: string;
@@ -30,7 +35,7 @@ export interface Assistant {
   createdBy: string;
   isPublic: boolean;
   publishedDepartments?: string[];
-  examplePrompts?: string[];
+  starterPrompts?: StarterPrompt[];
   quickPrompts?: string[];
   defaultLlmModel?: string;
   updatedAt?: string;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Sparkles, Plus, Trash2, Code2, Search, Globe, ImagePlus, FileUp, BarChart3, Target, Zap, Palette, User, Settings, Wrench, ChevronDown, Users, Info, ArrowLeft, ArrowRight, Bot, PenTool, PanelRightClose, PanelRightOpen } from 'lucide-react';
-import { Assistant, ResponseBehavior } from '../types';
+import { Assistant, ResponseBehavior, StarterPrompt } from '../types';
 import { ChatPreview } from './ChatPreview';
 import { DepartmentTree } from './DepartmentTree';
 import { departments } from '../data/departments';
@@ -61,10 +61,11 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
   const [defaultLlmModel, setDefaultLlmModel] = useState(
     assistant?.defaultLlmModel || DEFAULT_LLM_MODEL
   );
-  const [examplePrompts, setExamplePrompts] = useState<string[]>(
-    assistant?.examplePrompts || []
+  const [starterPrompts, setStarterPrompts] = useState<StarterPrompt[]>(
+    assistant?.starterPrompts || []
   );
-  const [newExamplePrompt, setNewExamplePrompt] = useState('');
+  const [newStarterTitle, setNewStarterTitle] = useState('');
+  const [newStarterPrompt, setNewStarterPrompt] = useState('');
   const [quickPrompts, setQuickPrompts] = useState<string[]>(
     assistant?.quickPrompts || []
   );
@@ -91,7 +92,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       setAllowedTools(assistant.allowedTools);
       setSelectedDepartments(assistant.publishedDepartments || []);
       setDefaultLlmModel(assistant.defaultLlmModel || DEFAULT_LLM_MODEL);
-      setExamplePrompts(assistant.examplePrompts || []);
+      setStarterPrompts(assistant.starterPrompts || []);
       setQuickPrompts(assistant.quickPrompts || []);
     } else {
       // If we are creating new, we might be in the middle of a flow, so don't reset unless explicitly navigating
@@ -185,7 +186,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       return;
     }
 
-    const sanitizedExamplePrompts = examplePrompts.map((prompt) => prompt.trim()).filter(Boolean);
+    const sanitizedStarterPrompts = starterPrompts.filter((sp) => sp.title.trim() && sp.prompt.trim());
     const sanitizedQuickPrompts = quickPrompts.map((prompt) => prompt.trim()).filter(Boolean);
 
     const assistantData = {
@@ -196,7 +197,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       responseBehavior,
       allowedTools,
       publishedDepartments: selectedDepartments,
-      examplePrompts: sanitizedExamplePrompts,
+      starterPrompts: sanitizedStarterPrompts,
       quickPrompts: sanitizedQuickPrompts,
       defaultLlmModel,
       // If departments are selected, we consider it "published" or "shared".
@@ -221,7 +222,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     responseBehavior,
     allowedTools,
     defaultLlmModel,
-    examplePrompts,
+    starterPrompts,
     quickPrompts,
     createdBy: 'user',
     isPublic: false,
@@ -679,7 +680,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                 >
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Prompts & Examples</h3>
+                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Prompts & Starter Prompts</h3>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${openSections.prompts ? 'rotate-180' : ''}`} />
                 </button>
@@ -693,72 +694,95 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                   <div className="space-y-8">
                     <div>
                       <label className="block text-sm font-medium text-muted-foreground mb-1">
-                        Example Messages
+                        Starter Prompts
                       </label>
                       <p className="text-xs text-muted-foreground mb-3">
-                        Shown before the first message so users can start from sample requests.
+                        Shown in an empty chat so users can quickly start with predefined prompts. Each has a display title and the actual prompt text.
                       </p>
                       <div className="flex flex-col gap-3">
-                        {examplePrompts.map((prompt, index) => (
+                        {starterPrompts.map((sp, index) => (
                           <div
                             key={index}
-                            className="group flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg border-2 border-transparent hover:border-primary/20 transition-all hover:shadow-sm"
+                            className="group flex flex-col gap-2 p-3 bg-secondary/50 rounded-lg border-2 border-transparent hover:border-primary/20 transition-all hover:shadow-sm"
                           >
-                            <div className="flex-shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
-                              <Sparkles className="w-4 h-4" />
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                              <input
+                                type="text"
+                                value={sp.title}
+                                onChange={(e) => {
+                                  const updated = [...starterPrompts];
+                                  updated[index] = { ...updated[index], title: e.target.value };
+                                  setStarterPrompts(updated);
+                                }}
+                                placeholder="Title (displayed to user)"
+                                className="flex-1 px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm font-medium"
+                              />
+                              <button
+                                onClick={() => {
+                                  setStarterPrompts(starterPrompts.filter((_, i) => i !== index));
+                                }}
+                                className="flex-shrink-0 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                                title="Delete starter prompt"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
+                            <textarea
+                              value={sp.prompt}
+                              onChange={(e) => {
+                                const updated = [...starterPrompts];
+                                updated[index] = { ...updated[index], prompt: e.target.value };
+                                setStarterPrompts(updated);
+                              }}
+                              placeholder="Prompt text sent to the assistant..."
+                              rows={2}
+                              className="w-full px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm resize-none"
+                            />
+                          </div>
+                        ))}
+                        <div className="flex flex-col gap-2 p-3 bg-accent/30 rounded-lg border-2 border-dashed border-primary/30">
+                          <div className="flex items-center gap-2">
+                            <Plus className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                             <input
                               type="text"
-                              value={prompt}
-                              onChange={(e) => {
-                                const newPrompts = [...examplePrompts];
-                                newPrompts[index] = e.target.value;
-                                setExamplePrompts(newPrompts);
+                              value={newStarterTitle}
+                              onChange={(e) => setNewStarterTitle(e.target.value)}
+                              placeholder="Title (e.g. Explain a concept)"
+                              className="flex-1 px-3 py-1.5 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                            />
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-4 flex-shrink-0" />
+                            <textarea
+                              value={newStarterPrompt}
+                              onChange={(e) => setNewStarterPrompt(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && e.ctrlKey && newStarterTitle.trim() && newStarterPrompt.trim()) {
+                                  setStarterPrompts([...starterPrompts, { title: newStarterTitle.trim(), prompt: newStarterPrompt.trim() }]);
+                                  setNewStarterTitle('');
+                                  setNewStarterPrompt('');
+                                }
                               }}
-                              className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
+                              placeholder="Prompt text... (Ctrl+Enter to add)"
+                              rows={2}
+                              className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm resize-none"
                             />
                             <button
                               onClick={() => {
-                                const newPrompts = examplePrompts.filter((_, i) => i !== index);
-                                setExamplePrompts(newPrompts);
+                                if (newStarterTitle.trim() && newStarterPrompt.trim()) {
+                                  setStarterPrompts([...starterPrompts, { title: newStarterTitle.trim(), prompt: newStarterPrompt.trim() }]);
+                                  setNewStarterTitle('');
+                                  setNewStarterPrompt('');
+                                }
                               }}
-                              className="flex-shrink-0 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                              title="Delete example"
+                              disabled={!newStarterTitle.trim() || !newStarterPrompt.trim()}
+                              className="btn-primary btn-icon disabled:opacity-50 disabled:cursor-not-allowed mt-0.5"
+                              title="Add starter prompt"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Plus className="w-4 h-4" />
                             </button>
                           </div>
-                        ))}
-                        <div className="flex items-center gap-3 px-3 py-2 bg-accent/30 rounded-lg border-2 border-dashed border-primary/30">
-                          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                            <Plus className="w-4 h-4 text-muted-foreground" />
-                          </div>
-                          <input
-                            type="text"
-                            value={newExamplePrompt}
-                            onChange={(e) => setNewExamplePrompt(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && newExamplePrompt.trim()) {
-                                setExamplePrompts([...examplePrompts, newExamplePrompt.trim()]);
-                                setNewExamplePrompt('');
-                              }
-                            }}
-                            placeholder="Add a new example message..."
-                            className="flex-1 px-3 py-2 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground text-sm"
-                          />
-                          <button
-                            onClick={() => {
-                              if (newExamplePrompt.trim()) {
-                                setExamplePrompts([...examplePrompts, newExamplePrompt.trim()]);
-                                setNewExamplePrompt('');
-                              }
-                            }}
-                            disabled={!newExamplePrompt.trim()}
-                            className="btn-primary btn-icon disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Add example"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     </div>
