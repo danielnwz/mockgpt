@@ -23,7 +23,7 @@ const normalizePathname = (pathname: string) =>
 const routeMatches = (pathname: string, route: string) =>
   normalizePathname(pathname).endsWith(route);
 
-const appPath = (route: '/' | '/version' | '/chat-input-concepts' | '/tutorials') => {
+const appPath = (route: '/' | '/discovery' | '/version' | '/chat-input-concepts' | '/tutorials') => {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (route === '/') return base ? `${base}/` : '/';
   return `${base}${route}`;
@@ -146,6 +146,11 @@ export default function App() {
         setCurrentView('version');
         return;
       }
+      if (routeMatches(pathname, '/discovery')) {
+        setCurrentChat(null);
+        setCurrentView('discovery');
+        return;
+      }
       if (routeMatches(pathname, '/chat-input-concepts')) {
         setCurrentView('chat-input-concepts');
         return;
@@ -198,6 +203,12 @@ export default function App() {
   const navigateHome = () => {
     window.history.pushState({}, '', appPath('/'));
     setCurrentView('home');
+  };
+
+  const navigateToDiscovery = () => {
+    window.history.pushState({}, '', appPath('/discovery'));
+    setCurrentChat(null);
+    setCurrentView('discovery');
   };
 
   const handleStartChat = (message: string, assistant?: Assistant) => {
@@ -447,7 +458,7 @@ export default function App() {
                   navigateHome();
                   setCurrentChat(null);
                 } else if (view === 'assistants') {
-                  setCurrentView('discovery');
+                  navigateToDiscovery();
                 } else {
                   setCurrentView(view as View);
                 }
@@ -482,10 +493,8 @@ export default function App() {
                 <HomePage
                   onStartChat={handleStartChat}
                   recommendedAssistants={getRecommendedAssistants()}
-                  onDiscoverAll={() => setCurrentView('discovery')}
-                  onOpenAssistants={() => {
-                    setCurrentView('discovery');
-                  }}
+                  onDiscoverAll={navigateToDiscovery}
+                  onOpenAssistants={navigateToDiscovery}
                   onOpenTerms={() => setShowTerms(true)}
                   onOpenVersion={navigateToVersion}
                 />
