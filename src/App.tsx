@@ -5,17 +5,23 @@ import { AssistantDiscovery } from './components/AssistantDiscovery';
 import { AssistantEditor } from './components/AssistantEditor';
 import { Sidebar } from './components/Sidebar';
 import { TutorialsPage } from './components/TutorialsPage';
+import { HighRiskHelpPage } from './components/HighRiskHelpPage';
+import { AdminReportsPage } from './components/AdminReportsPage';
 
 
 import { VersionNotes } from './components/VersionNotes';
 import { SecureModeIntroModal } from './components/SecureModeIntroModal';
 import { ChatInputConceptsPage } from './components/ChatInputConceptsPage';
-import { Assistant, Chat, Message } from './types';
+import { Assistant, AssistantReport, Chat, Message, ReportStatus, TranscriptionSettings, UserRole, AssistantReportReason } from './types';
 import { getRecommendedAssistants, getCommunityAssistants, getOwnedAssistants, getSubscribedAssistants } from './data/assistants';
 import { findLLMModelById, getFallbackLLMModelId } from './data/llmModels';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { TranscriptionSettingsDialog } from './components/TranscriptionSettingsDialog';
 
-type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version' | 'chat-input-concepts' | 'tutorials';
+type View = 'home' | 'chat' | 'discovery' | 'editor' | 'version' | 'chat-input-concepts' | 'tutorials' | 'high-risk-help' | 'admin-reports';
+
+const currentUser: { name: string; role: UserRole } = { name: 'Daniel N.', role: 'admin' };
+const canUseAdminFeatures = currentUser.role === 'admin' || currentUser.role === 'moderator';
 
 const normalizePathname = (pathname: string) =>
   pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
@@ -23,7 +29,7 @@ const normalizePathname = (pathname: string) =>
 const routeMatches = (pathname: string, route: string) =>
   normalizePathname(pathname).endsWith(route);
 
-const appPath = (route: '/' | '/discovery' | '/version' | '/chat-input-concepts' | '/tutorials') => {
+const appPath = (route: '/' | '/discovery' | '/version' | '/chat-input-concepts' | '/tutorials' | '/high-risk-help') => {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   if (route === '/') return base ? `${base}/` : '/';
   return `${base}${route}`;
@@ -37,6 +43,53 @@ const getDefaultSubscribedIds = (): string[] =>
       .filter((assistant) => !assistant.deletedByOwner)
       .slice(0, 7),
   ].map((assistant) => assistant.id);
+const createMockAssistantReports = (): AssistantReport[] => [
+  {
+    id: 'mock-report-privacy-1',
+    assistantId: 'rit-1',
+    reason: 'privacy',
+    comment: 'Der Assistent fordert wiederholt personenbezogene Daten an, bevor klar ist, ob sie fuer die Antwort notwendig sind.',
+    reportedBy: 'Mira K.',
+    createdAt: '2026-07-08T09:15:00.000Z',
+    status: 'open',
+  },
+  {
+    id: 'mock-report-unsafe-1',
+    assistantId: 'plan-1',
+    reason: 'unsafe',
+    comment: 'Antworten wirken zu verbindlich fuer Bauvorschriften und sollten deutlicher als Hilfestellung gekennzeichnet werden.',
+    reportedBy: 'Thomas R.',
+    createdAt: '2026-07-08T13:40:00.000Z',
+    status: 'open',
+  },
+  {
+    id: 'mock-report-spam-1',
+    assistantId: 'sub-2',
+    reason: 'spam',
+    comment: 'Beschreibung und Quick Prompts lesen sich wie Werbung fuer ein externes Produkt.',
+    reportedBy: 'Sofia N.',
+    createdAt: '2026-07-09T07:30:00.000Z',
+    status: 'open',
+  },
+  {
+    id: 'mock-report-inappropriate-1',
+    assistantId: 'kultur-1',
+    reason: 'inappropriate',
+    comment: 'Einige Formulierungen im System Prompt sind fuer externe Veranstalter missverstaendlich.',
+    reportedBy: 'Jonas B.',
+    createdAt: '2026-07-09T11:05:00.000Z',
+    status: 'reviewed',
+  },
+  {
+    id: 'mock-report-other-1',
+    assistantId: 'usr-2',
+    reason: 'other',
+    comment: 'Privater Assistent taucht in Testszenarien auf und sollte fuer normale Nutzer unsichtbar bleiben.',
+    reportedBy: 'Lea S.',
+    createdAt: '2026-07-09T15:25:00.000Z',
+    status: 'open',
+  },
+];
 
 const createMockChats = (subscribedAssistantIds: string[]): Chat[] => {
   if (subscribedAssistantIds.length === 0) return [];
@@ -106,11 +159,26 @@ export default function App() {
 
 
   const [darkMode, setDarkMode] = useState(false);
-  const [showAssistantIcons, setShowAssistantIcons] = useState(() =>
-    localStorage.getItem('showAssistantIcons') !== 'false'
-  );
   const [showTerms, setShowTerms] = useState(false);
   const [showSecureIntro, setShowSecureIntro] = useState(false);
+  const [showTranscriptionSettings, setShowTranscriptionSettings] = useState(false);
+  const [transcriptionRecording, setTranscriptionRecording] = useState(false);
+  const [transcriptionSettings, setTranscriptionSettings] = useState<TranscriptionSettings>(() => {
+    const saved = localStorage.getItem('transcriptionSettings');
+    if (saved) {
+      try {
+        return JSON.parse(saved) as TranscriptionSettings;
+      } catch {
+        localStorage.removeItem('transcriptionSettings');
+      }
+    }
+
+    return {
+      enabled: false,
+      modelId: 'whisper-small',
+      downloadedModelIds: [],
+    };
+  });
 
   const [assistants, setAssistants] = useState<Assistant[]>(() => {
     const saved = localStorage.getItem('assistants');
@@ -136,7 +204,38 @@ export default function App() {
   );
 
   const [privateMode, setPrivateMode] = useState(false);
+  const [adminMode, setAdminMode] = useState(false);
+  const [assistantReports, setAssistantReports] = useState<AssistantReport[]>(() => {
+    const saved = localStorage.getItem('assistantReports');
+    if (!saved) return createMockAssistantReports();
+    try {
+      return JSON.parse(saved) as AssistantReport[];
+    } catch {
+      localStorage.removeItem('assistantReports');
+      return [];
+    }
+  });
+  const [moderationHiddenIds, setModerationHiddenIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('moderationHiddenAssistantIds');
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved) as string[];
+    } catch {
+      localStorage.removeItem('moderationHiddenAssistantIds');
+      return [];
+    }
+  });
 
+  const [deletedAssistantIds, setDeletedAssistantIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('deletedAssistantIds');
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved) as string[];
+    } catch {
+      localStorage.removeItem('deletedAssistantIds');
+      return [];
+    }
+  });
   useEffect(() => {
     const accepted = localStorage.getItem('termsAccepted');
     if (!accepted) {
@@ -160,6 +259,11 @@ export default function App() {
       }
       if (routeMatches(pathname, '/tutorials')) {
         setCurrentView('tutorials');
+        return;
+      }
+      if (routeMatches(pathname, '/high-risk-help')) {
+        setCurrentChat(null);
+        setCurrentView('high-risk-help');
         return;
       }
       setCurrentView('home');
@@ -187,8 +291,19 @@ export default function App() {
   }, [darkMode, privateMode]);
 
   useEffect(() => {
-    localStorage.setItem('showAssistantIcons', String(showAssistantIcons));
-  }, [showAssistantIcons]);
+    localStorage.setItem('transcriptionSettings', JSON.stringify(transcriptionSettings));
+  }, [transcriptionSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('assistantReports', JSON.stringify(assistantReports));
+  }, [assistantReports]);
+
+  useEffect(() => {
+    localStorage.setItem('moderationHiddenAssistantIds', JSON.stringify(moderationHiddenIds));
+  }, [moderationHiddenIds]);
+  useEffect(() => {
+    localStorage.setItem('deletedAssistantIds', JSON.stringify(deletedAssistantIds));
+  }, [deletedAssistantIds]);
 
   useEffect(() => {
     return () => {
@@ -388,6 +503,7 @@ export default function App() {
     const updatedAssistants = assistants.filter(a => a.id !== assistantId);
     setAssistants(updatedAssistants);
     localStorage.setItem('assistants', JSON.stringify(updatedAssistants));
+    setDeletedAssistantIds((current) => current.includes(assistantId) ? current : [...current, assistantId]);
 
     // Remove from subscribed if it's there
     if (subscribedIds.includes(assistantId)) {
@@ -395,6 +511,46 @@ export default function App() {
       setSubscribedIds(updatedSubscribed);
       localStorage.setItem('subscribedAssistants', JSON.stringify(updatedSubscribed));
     }
+  };
+
+  const handleReportAssistant = (assistantId: string, reason: AssistantReportReason, comment?: string) => {
+    const newReport: AssistantReport = {
+      id: 'report-' + Date.now(),
+      assistantId,
+      reason,
+      comment: comment?.trim() || undefined,
+      reportedBy: currentUser.name,
+      createdAt: new Date().toISOString(),
+      status: 'open',
+    };
+    setAssistantReports((current) => [newReport, ...current]);
+  };
+
+  const handleUpdateReportStatus = (reportId: string, status: ReportStatus) => {
+    setAssistantReports((current) =>
+      current.map((report) => report.id === reportId ? { ...report, status } : report)
+    );
+  };
+
+  const handleHideAssistant = (assistantId: string) => {
+    setModerationHiddenIds((current) => current.includes(assistantId) ? current : [...current, assistantId]);
+    const updatedAssistants = assistants.map((assistant) =>
+      assistant.id === assistantId ? { ...assistant, moderationHidden: true } : assistant
+    );
+    setAssistants(updatedAssistants);
+    localStorage.setItem('assistants', JSON.stringify(updatedAssistants));
+  };
+
+  const handleToggleAdminMode = () => {
+    if (!canUseAdminFeatures) return;
+
+    setAdminMode((enabled) => {
+      const next = !enabled;
+      if (!next && currentView === 'admin-reports') {
+        navigateToDiscovery();
+      }
+      return next;
+    });
   };
 
 
@@ -421,8 +577,15 @@ export default function App() {
     }
   };
 
-  const allAssistants = [...getRecommendedAssistants(), ...getCommunityAssistants(), ...assistants];
-  const userAssistants = assistants;
+  const moderationHiddenSet = new Set(moderationHiddenIds);
+  const withModerationState = (assistant: Assistant): Assistant => (
+    moderationHiddenSet.has(assistant.id) ? { ...assistant, moderationHidden: true } : assistant
+  );
+  const deletedAssistantSet = new Set(deletedAssistantIds);
+  const allAssistants = [...getRecommendedAssistants(), ...getCommunityAssistants(), ...assistants]
+    .filter((assistant) => !deletedAssistantSet.has(assistant.id))
+    .map(withModerationState);
+  const userAssistants = assistants.map(withModerationState);
 
   const handleTogglePrivateMode = () => {
     if (!privateMode) {
@@ -450,6 +613,17 @@ export default function App() {
     setPrivateMode(true);
   };
 
+  const transcriptionReady = transcriptionSettings.enabled &&
+    transcriptionSettings.downloadedModelIds.includes(transcriptionSettings.modelId);
+
+  const handleVoiceInput = () => {
+    if (!transcriptionReady) {
+      setShowTranscriptionSettings(true);
+      return;
+    }
+
+    setTranscriptionRecording((recording) => !recording);
+  };
 
   return (
     <LanguageProvider>
@@ -492,8 +666,15 @@ export default function App() {
               onTogglePrivateMode={handleTogglePrivateMode}
               darkMode={darkMode}
               onToggleDarkMode={() => setDarkMode(!darkMode)}
-              showAssistantIcons={showAssistantIcons}
-              onToggleAssistantIcons={() => setShowAssistantIcons((current) => !current)}
+              transcriptionReady={transcriptionReady}
+              transcriptionEnabled={transcriptionSettings.enabled}
+              onOpenTranscriptionSettings={() => setShowTranscriptionSettings(true)}
+              onOpenTerms={() => setShowTerms(true)}
+              onOpenVersion={navigateToVersion}
+              currentUserRole={currentUser.role}
+              adminMode={adminMode}
+              onToggleAdminMode={handleToggleAdminMode}
+              reportedCount={assistantReports.filter((report) => report.status === 'open').length}
             />
 
 
@@ -504,8 +685,10 @@ export default function App() {
                   recommendedAssistants={getRecommendedAssistants()}
                   onDiscoverAll={navigateToDiscovery}
                   onOpenAssistants={navigateToDiscovery}
-                  onOpenTerms={() => setShowTerms(true)}
-                  onOpenVersion={navigateToVersion}
+                  transcriptionReady={transcriptionReady}
+                  transcriptionRecording={transcriptionRecording}
+                  onVoiceInput={handleVoiceInput}
+                  onOpenTranscriptionSettings={() => setShowTranscriptionSettings(true)}
                 />
               )}
 
@@ -522,9 +705,16 @@ export default function App() {
                   onToggleSubscribe={handleToggleSubscribe}
                   userAssistants={userAssistants}
                   subscribedIds={subscribedIds}
-                  // @ts-ignore - Prop will be added in next step
                   privateMode={privateMode}
                   onEnableSecureMode={handleEnableSecureMode}
+                  transcriptionReady={transcriptionReady}
+                  transcriptionRecording={transcriptionRecording}
+                  onVoiceInput={handleVoiceInput}
+                  onOpenTranscriptionSettings={() => setShowTranscriptionSettings(true)}
+                  currentUserRole={currentUser.role}
+                  adminMode={adminMode}
+                  reports={assistantReports}
+                  onReportAssistant={handleReportAssistant}
                 />
               )}
 
@@ -543,7 +733,10 @@ export default function App() {
                     }}
                     onToggleSubscribe={handleToggleSubscribe}
                     subscribedIds={subscribedIds}
-                    showAssistantIcons={showAssistantIcons}
+                    currentUserRole={currentUser.role}
+                    adminMode={adminMode}
+                    reports={assistantReports}
+                    onReportAssistant={handleReportAssistant}
                   />
 
                   {currentView === 'editor' && (
@@ -574,6 +767,23 @@ export default function App() {
 
               {currentView === 'tutorials' && (
                 <TutorialsPage onBack={navigateHome} />
+              )}
+
+              {currentView === 'high-risk-help' && (
+                <HighRiskHelpPage onBack={navigateToDiscovery} />
+              )}
+
+              {currentView === 'admin-reports' && (
+                <AdminReportsPage
+                  assistants={allAssistants}
+                  reports={assistantReports}
+                  onBack={navigateToDiscovery}
+                  onUpdateReportStatus={handleUpdateReportStatus}
+                  onHideAssistant={handleHideAssistant}
+                  onEditAssistant={handleEditAssistant}
+                  onDeleteAssistant={handleDeleteAssistant}
+                  onSelectAssistant={(assistant) => handleStartChat('', assistant)}
+                />
               )}
             </main>
           </div>
@@ -618,6 +828,13 @@ export default function App() {
       {showSecureIntro && (
         <SecureModeIntroModal onClose={handleConfirmSecureMode} />
       )}
+
+      <TranscriptionSettingsDialog
+        open={showTranscriptionSettings}
+        settings={transcriptionSettings}
+        onOpenChange={setShowTranscriptionSettings}
+        onSettingsChange={setTranscriptionSettings}
+      />
     </LanguageProvider>
   );
 }

@@ -8,8 +8,15 @@ let currentLanguage: Language = 'en';
 const translations = {
   en: {
     // Header
-    help: 'Help',
+    help: 'FAQ',
     feedback: 'Feedback',
+    reportIncident: 'Report incident',
+    termsOfUse: 'Terms of use',
+    whatsNew: "What's new?",
+    versionLabel: 'Version 2.0',
+    lightTheme: 'Light Theme',
+    darkTheme: 'Dark Theme',
+    languageLabel: 'Language',
     about: 'About',
     changeLanguage: 'Change language',
 
@@ -249,6 +256,13 @@ const translations = {
     // Header
     help: 'Hilfe',
     feedback: 'Feedback',
+    reportIncident: 'Vorfall melden',
+    termsOfUse: 'Nutzungsbedingungen',
+    whatsNew: 'Was ist neu?',
+    versionLabel: 'Version 2.0',
+    lightTheme: 'Light Theme',
+    darkTheme: 'Dark Theme',
+    languageLabel: 'Sprache',
     about: 'Über',
     changeLanguage: 'Sprache ändern',
 

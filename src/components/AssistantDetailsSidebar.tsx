@@ -1,6 +1,6 @@
-import { Assistant } from '../types';
+import { Assistant, AssistantReport, AssistantReportReason, UserRole } from '../types';
 import { exportAssistantData } from './AssistantDetailsPage';
-import { Star, Edit, Copy, Download, Trash2, Info, Sparkles, Zap, FileUp, X, MoreVertical, MessageSquare, ChevronDown, type LucideIcon } from 'lucide-react';
+import { Star, Edit, Copy, Download, Trash2, Info, Sparkles, Zap, FileUp, X, MoreVertical, MessageSquare, ChevronDown, Flag, EyeOff, AlertTriangle, type LucideIcon } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { departments } from '../data/departments';
@@ -28,6 +28,10 @@ interface AssistantDetailsSidebarProps {
     subscribedIds: string[];
     showStartConversationButton?: boolean;
     onToggleSubscribe?: (assistantId: string) => void;
+    currentUserRole?: UserRole;
+    adminMode?: boolean;
+    reportsForAssistant?: AssistantReport[];
+    onReportAssistant?: (assistantId: string, reason: AssistantReportReason, comment?: string) => void;
 }
 
 // Helper function to format tool names
@@ -111,10 +115,18 @@ export function AssistantDetailsSidebar({
     onDeleteAssistant,
     onToggleSubscribe,
     showStartConversationButton = true,
+    currentUserRole = 'user',
+    adminMode = false,
+    reportsForAssistant = [],
+    onReportAssistant,
 }: AssistantDetailsSidebarProps) {
     const [showMoreOptions, setShowMoreOptions] = useState(false);
     const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showReportDialog, setShowReportDialog] = useState(false);
+    const [reportReason, setReportReason] = useState<AssistantReportReason>('inappropriate');
+    const [reportComment, setReportComment] = useState('');
+    const [reportSubmitted, setReportSubmitted] = useState(false);
     const optionsButtonRef = useRef<HTMLButtonElement | null>(null);
     const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
         about: true,
@@ -142,6 +154,18 @@ export function AssistantDetailsSidebar({
             : {
                 summary: 'Practical and balanced responses.',
             };
+    const openReports = reportsForAssistant.filter((report) => report.status === 'open');
+    const canReportAssistant = Boolean(onReportAssistant) && !adminMode;
+    const isPrivilegedUser = currentUserRole === 'admin' || currentUserRole === 'moderator';
+
+    const handleSubmitReport = () => {
+        if (!onReportAssistant) return;
+        onReportAssistant(assistant.id, reportReason, reportComment);
+        setReportSubmitted(true);
+        setReportComment('');
+        setShowReportDialog(false);
+    };
+
     const toggleSection = (key: SectionKey) => {
         setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
     };
@@ -185,6 +209,16 @@ export function AssistantDetailsSidebar({
                             {subscribedIds.includes(assistant.id) && (
                                 <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 flex items-center gap-1">
                                     <Star className="w-3 h-3 fill-current" /> Subscribed
+                                </span>
+                            )}
+                            {openReports.length > 0 && (
+                                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300 border border-amber-200 dark:border-amber-500/35 flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3" /> {openReports.length} open report{openReports.length === 1 ? '' : 's'}
+                                </span>
+                            )}
+                            {assistant.moderationHidden && (
+                                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 flex items-center gap-1">
+                                    <EyeOff className="w-3 h-3" /> Hidden
                                 </span>
                             )}
                         </div>
@@ -264,6 +298,18 @@ export function AssistantDetailsSidebar({
                                             </button>
                                         )}
 
+                                        {canReportAssistant && (
+                                            <button
+                                                onClick={() => {
+                                                    setShowReportDialog(true);
+                                                    setShowMoreOptions(false);
+                                                }}
+                                                className="w-full px-3 py-2 text-left hover:bg-accent/50 rounded-md text-foreground transition-all flex items-center gap-3 group"
+                                            >
+                                                <Flag className="w-4 h-4 text-muted-foreground group-hover:text-destructive transition-colors" />
+                                                <span className="font-medium">Report assistant</span>
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => {
                                                 exportAssistantData(assistant);
@@ -324,6 +370,64 @@ export function AssistantDetailsSidebar({
                     </AlertDialog>
                 )}
 
+                {showReportDialog && (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 px-4" onClick={() => setShowReportDialog(false)}>
+                        <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                            <div className="mb-4 flex items-start gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+                                    <Flag className="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-foreground">Report assistant</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">Tell moderators what should be reviewed.</p>
+                                </div>
+                            </div>
+
+                            <label className="mb-2 block text-sm font-medium text-foreground">Reason</label>
+                            <select
+                                value={reportReason}
+                                onChange={(e) => setReportReason(e.target.value as AssistantReportReason)}
+                                className="mb-4 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary/60"
+                            >
+                                <option value="inappropriate">Inappropriate content</option>
+                                <option value="unsafe">Unsafe behavior</option>
+                                <option value="privacy">Privacy concern</option>
+                                <option value="spam">Spam or misleading</option>
+                                <option value="other">Other</option>
+                            </select>
+
+                            <label className="mb-2 block text-sm font-medium text-foreground">Comment</label>
+                            <textarea
+                                value={reportComment}
+                                onChange={(e) => setReportComment(e.target.value)}
+                                rows={4}
+                                placeholder="Optional context for moderators"
+                                className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/60"
+                            />
+
+                            <div className="mt-5 flex justify-end gap-2">
+                                <button type="button" onClick={() => setShowReportDialog(false)} className="btn-ghost">
+                                    Cancel
+                                </button>
+                                <button type="button" onClick={handleSubmitReport} className="btn-primary">
+                                    Submit report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {reportSubmitted && (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        Report submitted. Moderators can review it in admin mode.
+                    </div>
+                )}
+
+                {isPrivilegedUser && adminMode && openReports.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/35 dark:bg-amber-500/10 dark:text-amber-200">
+                        This assistant has open moderation reports. Use the reported assistants page to update status or hide it.
+                    </div>
+                )}
                 <div className="rounded-2xl bg-card/30 divide-y divide-border/45">
                     <SidebarSection
                         title="About"
@@ -451,3 +555,9 @@ export function AssistantDetailsSidebar({
         </div>
     );
 }
+
+
+
+
+
+

@@ -8,7 +8,7 @@
   /* Light Mode - Standard workspace now uses the previous secure blue palette */
   --background: #f8fafc;
   --foreground: #0f172a;
-  --card: #ffffff;
+  --card: #fcfdff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
@@ -158,7 +158,7 @@
     /* Light Mode - Sage/green secure palette */
     --background: #f5f7f6;
     --foreground: #1a2421;
-    --card: #ffffff;
+    --card: #fcfdff;
     --card-foreground: #1a2421;
     --popover: #ffffff;
     --popover-foreground: #1a2421;

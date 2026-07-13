@@ -1,10 +1,8 @@
 import {
-  Home,
   MessageSquarePlus,
   ChevronLeft,
   ChevronRight,
   Trash2,
-  History,
   Sparkles,
   Pencil,
   DoorOpen,
@@ -12,21 +10,24 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   Sun,
   Moon,
   HelpCircle,
   MessageSquare,
   GraduationCap,
-  MoreHorizontal
+  MoreHorizontal,
+  FileText,
+  Megaphone,
+  Info,
+  Mic
 } from 'lucide-react';
-import { Chat, Assistant } from '../types';
+import { Chat, Assistant, UserRole } from '../types';
 import { useState } from 'react';
 import { useLanguage, useTranslation } from '../contexts/LanguageContext';
 import { FAQModal } from './FAQModal';
 import logo from '../img/edelweiss_pride.svg';
 
-type View = 'home' | 'chat' | 'discovery' | 'editor' | 'assistants' | 'version' | 'chat-input-concepts' | 'tutorials';
+type View = 'home' | 'chat' | 'discovery' | 'editor' | 'assistants' | 'version' | 'chat-input-concepts' | 'tutorials' | 'high-risk-help' | 'admin-reports';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -45,8 +46,15 @@ interface SidebarProps {
   onTogglePrivateMode: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  showAssistantIcons: boolean;
-  onToggleAssistantIcons: () => void;
+  transcriptionReady: boolean;
+  transcriptionEnabled: boolean;
+  onOpenTranscriptionSettings: () => void;
+  onOpenTerms: () => void;
+  onOpenVersion: () => void;
+  currentUserRole: UserRole;
+  adminMode: boolean;
+  onToggleAdminMode: () => void;
+  reportedCount: number;
 }
 
 export function Sidebar({
@@ -66,8 +74,15 @@ export function Sidebar({
   onTogglePrivateMode,
   darkMode,
   onToggleDarkMode,
-  showAssistantIcons,
-  onToggleAssistantIcons,
+  transcriptionReady,
+  transcriptionEnabled,
+  onOpenTranscriptionSettings,
+  onOpenTerms,
+  onOpenVersion,
+  currentUserRole,
+  adminMode,
+  onToggleAdminMode,
+  reportedCount,
 }: SidebarProps) {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [hoveredChat, setHoveredChat] = useState<string | null>(null);
@@ -77,6 +92,7 @@ export function Sidebar({
 
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showVersionDetails, setShowVersionDetails] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
@@ -104,10 +120,13 @@ export function Sidebar({
   const isAssistantContext = currentView === 'chat' && Boolean(activeAssistantId);
   const showCollapsedExpandButton = collapsed && isSidebarHovered;
 
+  const canUseAdminMode = currentUserRole === 'admin' || currentUserRole === 'moderator';
   const navItems = [
-    { id: 'home' as const, icon: Home, label: t('home') },
-    { id: 'assistants' as const, icon: Sparkles, label: t('assistants') },
     { id: 'newchat' as const, icon: MessageSquarePlus, label: t('newChat') },
+    { id: 'assistants' as const, icon: Sparkles, label: t('assistants') },
+    ...(canUseAdminMode && adminMode
+      ? [{ id: 'admin-reports' as const, icon: AlertTriangle, label: 'Moderation', count: reportedCount }]
+      : []),
   ];
 
   const handleNavClick = (id: string) => {
@@ -138,9 +157,6 @@ export function Sidebar({
             {currentChatId === chat.id && (
               <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-sidebar-primary" />
             )}
-            <span className="w-6 h-6 flex items-center justify-center rounded-full bg-sidebar-accent/60 text-sm">
-              {assistantById.get(chat.assistantId || '')?.icon || 'AI'}
-            </span>
             {!collapsed && (
               <>
                 {editingChatId === chat.id ? (
@@ -228,14 +244,26 @@ export function Sidebar({
               <ChevronRight className="w-5 h-5" />
             </button>
           ) : (
-            <img src={logo} alt="MOCKGPT" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
+            <button
+              type="button"
+              onClick={() => onNavigate('home')}
+              className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-sidebar-accent transition-colors"
+              title={t('home')}
+            >
+              <img src={logo} alt="MOCKGPT" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
+            </button>
           )
         ) : (
           <>
-            <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => onNavigate('home')}
+              className="flex items-center gap-3 min-w-0 rounded-lg hover:bg-sidebar-accent transition-colors px-1 py-1 text-left"
+              title={t('home')}
+            >
               <img src={logo} alt="MOCKGPT" className="w-8 h-8 rounded-lg object-contain flex-shrink-0" />
               <h1 className="type-section text-sidebar-foreground truncate">MOCKGPT</h1>
-            </div>
+            </button>
 
             <button
               type="button"
@@ -252,7 +280,7 @@ export function Sidebar({
       <nav className="flex-1 overflow-y-auto p-2 pt-4 thin-scrollbar">
         <div className="space-y-1">
           {navItems.map((item) => {
-            const isActive = item.id === 'assistants' ? currentView === 'discovery' : currentView === item.id;
+            const isActive = (item.id === 'assistants' && currentView === 'discovery') || item.id === currentView;
             return (
               <button
                 key={item.id}
@@ -265,7 +293,16 @@ export function Sidebar({
               >
                 {isActive && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-sidebar-primary" />}
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && (
+                  <>
+                    <span className="truncate">{item.label}</span>
+                    {('count' in item && (item.count ?? 0) > 0) && (
+                      <span className="ml-auto rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                        {item.count}
+                      </span>
+                    )}
+                  </>
+                )}
               </button>
             );
           })}
@@ -276,23 +313,17 @@ export function Sidebar({
           aria-hidden="true"
         />
 
-        {chats.length > 0 && (
+        {!collapsed && chats.length > 0 && (
           <div>
-            {!collapsed && (
-              <div className="px-3 py-2 flex items-center gap-2 type-label text-muted-foreground">
-                <History className="w-3 h-3" />
-                {t('chatHistory')}
-              </div>
-            )}
+            <div className="px-3 py-2 type-label text-muted-foreground">
+              {t('chatHistory')}
+            </div>
 
             {isAssistantContext && !collapsed ? (
               <div className="space-y-2">
                 <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/20 overflow-hidden">
                   <div className="px-3 py-2 flex items-center justify-between bg-sidebar/60 backdrop-blur">
                     <div className="flex items-center gap-2 text-xs font-medium text-sidebar-foreground min-w-0">
-                      <span className="w-5 h-5 flex items-center justify-center rounded-full bg-sidebar-accent text-sm">
-                        {activeAssistant?.icon || 'AI'}
-                      </span>
                       <span className="truncate">{activeAssistant?.name || t('thisAssistant')}</span>
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-sidebar-accent text-muted-foreground">
@@ -329,8 +360,6 @@ export function Sidebar({
                   )}
                 </div>
               </div>
-            ) : isAssistantContext && collapsed ? (
-              renderChatList(assistantChats.length > 0 ? assistantChats : globalChats)
             ) : (
               renderChatList(globalChats)
             )}
@@ -434,9 +463,8 @@ export function Sidebar({
 
         {showSettingsMenu && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => { setShowSettingsMenu(false); setShowLanguageMenu(false); }} />
+            <div className="fixed inset-0 z-40" onClick={() => { setShowSettingsMenu(false); setShowLanguageMenu(false); setShowVersionDetails(false); }} />
             <div className={`absolute bottom-full mb-2 ${collapsed ? 'left-2 w-56' : 'left-2 right-2 min-w-[200px]'} bg-card border border-border rounded-xl shadow-xl z-50 overflow-visible flex flex-col py-1`}>
-              {/* Appearance & Preferences */}
               <button
                 className="w-full flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
                 onClick={(e) => {
@@ -449,33 +477,36 @@ export function Sidebar({
                     <Sun className={`absolute w-4 h-4 transition-all duration-300 ${darkMode ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'}`} />
                     <Moon className={`absolute w-4 h-4 transition-all duration-300 ${darkMode ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'}`} />
                   </div>
-                  <span>{darkMode ? t('darkMode') || 'Dark Mode' : t('lightMode') || 'Light Mode'}</span>
+                  <span>{darkMode ? t('darkTheme') || 'Dark Theme' : t('lightTheme') || 'Light Theme'}</span>
                 </div>
                 <div className={`w-10 h-5 rounded-full transition-colors duration-300 relative flex items-center shadow-inner ${darkMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}>
                   <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.3)] ${darkMode ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
                 </div>
               </button>
 
-              <button
-                className="w-full flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleAssistantIcons();
-                }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Sparkles className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  <span className="truncate">{t('assistantIcons')}</span>
-                </div>
-                <div className={`w-10 h-5 rounded-full transition-colors duration-300 relative flex items-center shadow-inner ${showAssistantIcons ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'}`}>
-                  <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.3)] ${showAssistantIcons ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
-                </div>
-              </button>
-
+              {canUseAdminMode && (
+                <button
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleAdminMode();
+                    setShowLanguageMenu(false);
+                    setShowSettingsMenu(false);
+                  }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <ShieldCheck className={`w-4 h-4 flex-shrink-0 ${adminMode ? 'text-destructive' : 'text-muted-foreground'}`} />
+                    <span className="truncate">Admin mode</span>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full transition-colors duration-300 relative flex items-center shadow-inner ${adminMode ? 'bg-destructive' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                    <div className={`w-4 h-4 rounded-full bg-white absolute transition-transform duration-300 shadow-[0_1px_3px_rgba(0,0,0,0.3)] ${adminMode ? 'translate-x-[22px]' : 'translate-x-[2px]'}`} />
+                  </div>
+                </button>
+              )}
               <div className="relative">
                 <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={(e) => { e.stopPropagation(); setShowLanguageMenu(!showLanguageMenu); }}>
                   <span className="text-lg leading-none w-4 flex justify-center">{languages.find(l => l.code === language)?.flag || '🌐'}</span>
-                  <span className="flex-1">{languages.find(l => l.code === language)?.name || language.toUpperCase()}</span>
+                  <span className="flex-1">{t('languageLabel') || 'Language'}</span>
                   <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform ${showLanguageMenu ? 'rotate-90' : ''}`} />
                 </button>
                 {showLanguageMenu && (
@@ -488,6 +519,29 @@ export function Sidebar({
                   </div>
                 )}
               </div>
+
+              <button
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenTranscriptionSettings();
+                  setShowLanguageMenu(false);
+                  setShowSettingsMenu(false);
+                }}
+              >
+                <Mic className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="truncate">Transcription</span>
+                    <span className="rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
+                      Beta
+                    </span>
+                  </span>
+                </span>
+                <span className={`text-[10px] font-medium ${transcriptionReady ? 'text-emerald-600 dark:text-emerald-300' : 'text-muted-foreground'}`}>
+                  {transcriptionReady ? 'Ready' : transcriptionEnabled ? 'Setup' : 'Off'}
+                </span>
+              </button>
 
               <div className="my-1 border-t border-border" />
 
@@ -502,18 +556,59 @@ export function Sidebar({
                 {t('help') || 'FAQ'}
               </button>
 
-              <div className="my-1 border-t border-border" />
-
-              {/* Feedback & Community */}
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => window.open('https://example.com/feature-voting', '_blank')}>
-                <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                Feature Voting
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => { setShowFeedback(true); setShowSettingsMenu(false); }}>
+                <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+                {t('reportIncident') || 'Report incident'}
               </button>
 
               <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => { setShowFeedback(true); setShowSettingsMenu(false); }}>
                 <MessageSquare className="w-4 h-4 text-muted-foreground" />
                 {t('feedback') || 'Feedback'}
               </button>
+
+              <div className="my-1 border-t border-border" />
+
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => { onOpenTerms(); setShowSettingsMenu(false); }}>
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                {t('termsOfUse') || 'Terms of use'}
+              </button>
+
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left" onClick={() => { onOpenVersion(); setShowSettingsMenu(false); }}>
+                <Megaphone className="w-4 h-4 text-muted-foreground" />
+                {t('whatsNew') || "What's new?"}
+              </button>
+
+              <div className="relative">
+                <button
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowVersionDetails(!showVersionDetails);
+                    setShowLanguageMenu(false);
+                  }}
+                >
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                  <span className="flex-1">{t('versionLabel') || 'Version 2.0'}</span>
+                </button>
+                {showVersionDetails && (
+                  <div className="absolute left-full bottom-0 ml-2 w-64 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-xl z-50">
+                    <div className="flex items-center justify-between px-3 py-2 text-xs">
+                      <span className="text-muted-foreground">mucgpt-frontend</span>
+                      <span className="font-medium text-foreground">2.0.0</span>
+                    </div>
+                    <div className="border-t border-border" />
+                    <div className="flex items-center justify-between px-3 py-2 text-xs">
+                      <span className="text-muted-foreground">mucgpt-core</span>
+                      <span className="font-medium text-foreground">2.0.0</span>
+                    </div>
+                    <div className="border-t border-border" />
+                    <div className="flex items-center justify-between px-3 py-2 text-xs">
+                      <span className="text-muted-foreground">mucgpt-assistants</span>
+                      <span className="font-medium text-foreground">2.0.0</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}

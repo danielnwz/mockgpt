@@ -19,9 +19,38 @@ export interface Chat {
 
 export type ResponseBehavior = 'precise' | 'balanced' | 'creative';
 
+export type TranscriptionModelId = 'whisper-small' | 'whisper-large-v3-turbo';
+
+export interface TranscriptionSettings {
+  enabled: boolean;
+  modelId: TranscriptionModelId;
+  downloadedModelIds: TranscriptionModelId[];
+}
+
 export interface StarterPrompt {
   title: string;
   prompt: string;
+}
+
+export type UserRole = 'user' | 'admin' | 'moderator';
+
+export type ReportStatus = 'open' | 'reviewed' | 'dismissed';
+
+export type AssistantReportReason =
+  | 'inappropriate'
+  | 'unsafe'
+  | 'privacy'
+  | 'spam'
+  | 'other';
+
+export interface AssistantReport {
+  id: string;
+  assistantId: string;
+  reason: AssistantReportReason;
+  comment?: string;
+  reportedBy: string;
+  createdAt: string;
+  status: ReportStatus;
 }
 
 export interface Assistant {
@@ -42,6 +71,7 @@ export interface Assistant {
   subscriptionCount?: number;
   version?: string;
   deletedByOwner?: boolean;
+  moderationHidden?: boolean;
 }
 
 export interface Department {
@@ -49,3 +79,5 @@ export interface Department {
   name: string;
   children?: Department[];
 }
+
+

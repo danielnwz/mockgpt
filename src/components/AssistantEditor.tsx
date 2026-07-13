@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
-import { X, Save, Sparkles, Plus, Trash2, Code2, Search, Globe, ImagePlus, FileUp, BarChart3, Target, Zap, Palette, User, Settings, Wrench, ChevronDown, Users, Info, ArrowLeft, ArrowRight, Bot, PenTool, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { X, Save, Sparkles, Plus, Trash2, Code2, Search, Globe, ImagePlus, FileUp, BarChart3, Target, Zap, Palette, User, Settings, Wrench, ChevronDown, Users, Info, ArrowLeft, ArrowRight, Bot, PenTool, PanelRightClose, PanelRightOpen, ShieldCheck, AlertTriangle, ClipboardCheck } from 'lucide-react';
+import EmojiPicker, { EmojiStyle, SkinTones, Theme, type EmojiClickData } from 'emoji-picker-react';
+import deEmojiData from 'emoji-picker-react/dist/data/emojis-de';
 import { Assistant, ResponseBehavior, StarterPrompt } from '../types';
 import { ChatPreview } from './ChatPreview';
 import { DepartmentTree } from './DepartmentTree';
+import { Checkbox } from './ui/checkbox';
 import { departments } from '../data/departments';
 import { getAllLLMModels, getFallbackLLMModelId } from '../data/llmModels';
 
@@ -21,8 +24,6 @@ const AVAILABLE_TOOLS = [
   { id: 'data_analysis', label: 'Data Analysis', icon: BarChart3 },
 ];
 
-const EMOJI_OPTIONS = ['🤖', '💻', '✍️', '🔬', '🌍', '📊', '📱', '🧮', '🏥', '💼', '✈️', '🎨', '🎵', '🍳', '⚽', '📚'];
-
 const RESPONSE_BEHAVIORS: { value: ResponseBehavior; label: string; description: string; icon: any }[] = [
   { value: 'precise', label: 'Precise', description: 'Focused and accurate responses with minimal creativity', icon: Target },
   { value: 'balanced', label: 'Balanced', description: 'A good mix of accuracy and creativity', icon: Zap },
@@ -33,6 +34,13 @@ const ALL_LLM_MODELS = getAllLLMModels();
 const DEFAULT_LLM_MODEL = getFallbackLLMModelId(false);
 
 type CreationStep = 'initial' | 'ai-input' | 'form';
+type SanityCheckStatus = 'clear' | 'warning' | 'error';
+type SanityCheckCase = {
+  status: SanityCheckStatus;
+  title: string;
+  description: string;
+  area?: string;
+};
 
 export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditorProps) {
   // State for creation flow
@@ -48,6 +56,8 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
   const [systemPrompt, setSystemPrompt] = useState(
     assistant?.systemPrompt || 'You are a helpful AI assistant.'
   );
+  const [complianceConfirmed, setComplianceConfirmed] = useState(false);
+  const [sanityCheckCase, setSanityCheckCase] = useState<SanityCheckCase | null>(null);
   const [responseBehavior, setResponseBehavior] = useState<ResponseBehavior>(
     assistant?.responseBehavior || 'balanced'
   );
@@ -55,6 +65,8 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     assistant?.allowedTools || []
   );
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiPickerTheme, setEmojiPickerTheme] = useState<Theme>(Theme.LIGHT);
+  const emojiPickerContainerRef = useRef<HTMLDivElement | null>(null);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>(
     assistant?.publishedDepartments || []
   );
@@ -88,6 +100,8 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       setDescription(assistant.description);
       setIcon(assistant.icon);
       setSystemPrompt(assistant.systemPrompt);
+      setComplianceConfirmed(false);
+      setSanityCheckCase(null);
       setResponseBehavior(assistant.responseBehavior);
       setAllowedTools(assistant.allowedTools);
       setSelectedDepartments(assistant.publishedDepartments || []);
@@ -100,6 +114,40 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       // For now, let's keep the step if we are already in the component.
     }
   }, [assistant]);
+
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+
+    const updateEmojiPickerTheme = () => {
+      const isDarkMode = Boolean(
+        emojiPickerContainerRef.current?.closest('.dark') ||
+        document.body.classList.contains('dark')
+      );
+      setEmojiPickerTheme(isDarkMode ? Theme.DARK : Theme.LIGHT);
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!emojiPickerContainerRef.current?.contains(target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    updateEmojiPickerTheme();
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showEmojiPicker]);
 
 
   const handleToggleTool = (toolId: string) => {
@@ -116,7 +164,7 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
 
     // Simulate AI generation for entire configuration
     setTimeout(() => {
-      // Simple heuristics for demo purposes
+      // Lightweight prompt generation heuristics
       const descLower = aiDescription.toLowerCase();
 
       let generatedName = "New Assistant";
@@ -141,10 +189,16 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       setIcon(generatedIcon);
       setAllowedTools(tools);
       setSystemPrompt(`You are ${generatedName}, an AI assistant designed to help with: ${aiDescription}.\n\nProvide clear, concise, and helpful responses.`);
+      setComplianceConfirmed(false);
 
       setIsGeneratingConfig(false);
       setCreationStep('form');
     }, 2000);
+  };
+
+  const handleEmojiSelect = (emojiData: EmojiClickData) => {
+    setIcon(emojiData.emoji);
+    setShowEmojiPicker(false);
   };
 
   const handleToggleDepartment = (departmentId: string) => {
@@ -180,9 +234,48 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
     setDraggedQuickPromptIndex(null);
   };
 
+  const handleSystemPromptChange = (value: string) => {
+    setSystemPrompt(value);
+    setSanityCheckCase(null);
+  };
+
+  const handlePromptSanityCheck = () => {
+    const warningAreas = [
+      'Beschäftigung und Personalentscheidungen',
+      'Bildung und Berufsbildung',
+      'Öffentliche Leistungen und Gesundheitsdienste',
+      'Migration, Asyl und Grenzkontrolle',
+    ];
+
+    const roll = Math.random();
+    if (roll < 0.45) {
+      setSanityCheckCase({
+        status: 'clear',
+        title: 'Keine Hinweise gefunden',
+        description: 'In den Assistentenanweisungen wurden keine auffälligen Hinweise auf einen Hochrisiko-Anwendungsfall erkannt. Die Prüfung dient nur als Orientierung. Entscheidend bleibt der tatsächliche Verwendungszweck.',
+      });
+      return;
+    }
+
+    if (roll < 0.9) {
+      setSanityCheckCase({
+        status: 'warning',
+        title: 'Möglicher Hochrisiko-Anwendungsfall erkannt',
+        description: 'Die Anweisungen enthalten Formulierungen, die auf einen nicht zulässigen Verwendungszweck hinweisen könnten.',
+        area: warningAreas[Math.floor(Math.random() * warningAreas.length)],
+      });
+      return;
+    }
+
+    setSanityCheckCase({
+      status: 'error',
+      title: 'Prüfung nicht möglich',
+      description: 'Die Assistentenanweisungen konnten derzeit nicht geprüft werden. Versuchen Sie es erneut.',
+    });
+  };
   const handleSave = () => {
-    if (!name.trim() || !description.trim()) {
-      alert('Please fill in all required fields');
+    if (!name.trim() || !systemPrompt.trim() || !complianceConfirmed) {
+      alert('Bitte füllen Sie den Titel, die Assistentenanweisungen und die Bestätigung des Verwendungszwecks aus.');
       return;
     }
 
@@ -212,6 +305,63 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
       onSave({ ...assistantData, isPublic: selectedDepartments.length > 0 } as any);
     }
   };
+
+  const sanityCheckResult = sanityCheckCase
+    ? {
+      icon: sanityCheckCase.status === 'clear'
+        ? ShieldCheck
+        : sanityCheckCase.status === 'warning'
+          ? AlertTriangle
+          : ClipboardCheck,
+      title: sanityCheckCase.title,
+      description: sanityCheckCase.description,
+      area: sanityCheckCase.area,
+      className: sanityCheckCase.status === 'clear'
+        ? 'border-success/40 bg-success/10 text-foreground'
+        : sanityCheckCase.status === 'warning'
+          ? 'border-warning/40 bg-warning/10 text-foreground'
+          : 'border-border bg-muted/30 text-foreground',
+      iconClassName: sanityCheckCase.status === 'clear'
+        ? 'text-success'
+        : sanityCheckCase.status === 'warning'
+          ? 'text-warning'
+          : 'text-muted-foreground',
+    }
+    : null;  const SanityCheckIcon = sanityCheckResult?.icon;
+  const canSave = Boolean(name.trim() && systemPrompt.trim() && complianceConfirmed);
+  const highRiskHelpPath = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/high-risk-help`;
+  const missingRequiredCount = [
+    !name.trim(),
+    !systemPrompt.trim(),
+    !complianceConfirmed,
+  ].filter(Boolean).length;
+  const selectedDefaultLlmModel = useMemo(
+    () => ALL_LLM_MODELS.find((model) => model.id === defaultLlmModel),
+    [defaultLlmModel]
+  );
+  const systemPromptUsage = useMemo(() => {
+    const estimatedTokens = systemPrompt.trim()
+      ? Math.max(1, Math.ceil(systemPrompt.length / 4))
+      : 0;
+    const estimatedInputCost = selectedDefaultLlmModel
+      ? (estimatedTokens / 1000) * selectedDefaultLlmModel.costInput
+      : null;
+    const usagePercent = selectedDefaultLlmModel?.maxInput
+      ? Math.min(100, Math.round((estimatedTokens / selectedDefaultLlmModel.maxInput) * 100))
+      : null;
+
+    return {
+      estimatedTokens,
+      estimatedInputCost,
+      usagePercent,
+    };
+  }, [selectedDefaultLlmModel, systemPrompt]);
+  const formattedSystemPromptCost = systemPromptUsage.estimatedInputCost === null
+    ? 'No model selected'
+    : systemPromptUsage.estimatedInputCost === 0
+      ? 'Free'
+      : `$${systemPromptUsage.estimatedInputCost.toFixed(systemPromptUsage.estimatedInputCost < 0.01 ? 4 : 2)}`;
+
 
   const previewAssistant: Assistant = {
     id: 'preview',
@@ -450,62 +600,64 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                   <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${openSections.basic ? 'rotate-180' : ''}`} />
                 </button>
                 <div
-                  className="px-6 pb-6 space-y-8 overflow-hidden transition-[max-height,opacity] duration-300 ease-out"
+                  className={`px-6 pb-6 space-y-6 transition-[max-height,opacity] duration-300 ease-out ${showEmojiPicker ? 'overflow-visible' : 'overflow-hidden'}`}
                   style={{
                     maxHeight: openSections.basic ? '2000px' : '0px',
                     opacity: openSections.basic ? 1 : 0,
                   }}
                 >
-
-                  {/* Icon */}
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                      Icon
-                    </label>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="w-16 h-16 text-4xl bg-secondary rounded-xl hover:bg-secondary/80 transition-colors flex items-center justify-center"
-                      >
-                        {icon}
-                      </button>
-                      {showEmojiPicker && (
-                        <div className="absolute top-full mt-2 p-3 bg-card border border rounded-xl shadow-lg z-10 grid grid-cols-8 gap-2">
-                          {EMOJI_OPTIONS.map((emoji) => (
-                            <button
-                              key={emoji}
-                              onClick={() => {
-                                setIcon(emoji);
-                                setShowEmojiPicker(false);
-                              }}
-                              className="text-2xl hover:bg-accent rounded p-1 transition-colors"
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                  <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
+                    {/* Icon */}
+                    <div className="sm:w-20 sm:flex-shrink-0">
+                      <div ref={emojiPickerContainerRef} className="relative">
+                        <button
+                          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                          type="button"
+                          className="w-16 h-16 text-4xl bg-secondary rounded-xl hover:bg-secondary/80 transition-colors flex items-center justify-center"
+                          aria-label="Choose assistant emoji"
+                        >
+                          {icon}
+                        </button>
+                        {showEmojiPicker && (
+                          <div className="absolute left-0 top-full z-30 mt-2 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+                            <EmojiPicker
+                              onEmojiClick={handleEmojiSelect}
+                              theme={emojiPickerTheme}
+                              emojiStyle={EmojiStyle.NATIVE}
+                              lazyLoadEmojis
+                              emojiData={deEmojiData}
+                              searchPlaceholder="Emoji suchen"
+                              searchClearButtonLabel="Suche löschen"
+                              defaultSkinTone={SkinTones.NEUTRAL}
+                              skinTonesDisabled
+                              width={320}
+                              height={360}
+                              previewConfig={{ showPreview: false }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground mb-2">
-                      Name <span className="text-destructive">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g., Code Assistant"
-                      className="w-full px-4 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
-                    />
+                    {/* Name */}
+                    <div className="min-w-0 flex-1">
+                      <label className="block text-sm font-medium text-muted-foreground mb-2">
+                        Name <span className="text-destructive">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="e.g., Code Assistant"
+                        className="w-full px-4 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
+                      />
+                    </div>
                   </div>
 
                   {/* Description */}
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground mb-2">
-                      Description <span className="text-destructive">*</span>
+                      Description
                     </label>
                     <textarea
                       value={description}
@@ -539,20 +691,127 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                   }}
                 >
 
-                  {/* System Prompt with AI Generation */}
+                  {/* Assistant instructions */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <label className="block text-sm font-medium text-muted-foreground">
-                        System Prompt <span className="text-destructive">*</span>
+                        Assistentenanweisungen <span className="text-destructive">*</span>
                       </label>
                     </div>
                     <textarea
                       value={systemPrompt}
-                      onChange={(e) => setSystemPrompt(e.target.value)}
-                      placeholder="Define the assistant's behavior and personality"
+                      onChange={(e) => handleSystemPromptChange(e.target.value)}
+                      placeholder="Beschreiben Sie, wie sich dieser Assistent verhalten soll und wobei er helfen soll"
                       rows={6}
+                      aria-required="true"
                       className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono text-sm bg-background text-foreground"
                     />
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
+                      <span className="inline-flex items-center rounded-md border border-border bg-background px-2 py-1 font-medium text-foreground">
+                        {systemPromptUsage.estimatedTokens.toLocaleString()} tokens
+                      </span>
+                      <span className="inline-flex items-center rounded-md border border-border bg-background px-2 py-1">
+                        {formattedSystemPromptCost} input cost
+                      </span>
+                      {selectedDefaultLlmModel && (
+                        <span className="inline-flex min-w-0 items-center rounded-md border border-border bg-background px-2 py-1">
+                          <span className="truncate">{selectedDefaultLlmModel.name}</span>
+                          {systemPromptUsage.usagePercent !== null && (
+                            <span className="ml-1 shrink-0 tabular-nums">({systemPromptUsage.usagePercent}% context)</span>
+                          )}
+                        </span>
+                      )}
+                      <span className="text-muted-foreground/80">Schätzung, der tatsächliche Tokenizer kann abweichen.</span>
+                    </div>
+
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <h4 className="text-base font-semibold text-foreground">Verwendungszweck bestätigen</h4>
+                        <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                          Bestätigen Sie vor der Veröffentlichung, dass dieser Assistent nicht für einen in MUCGPT unzulässigen Hochrisiko-Anwendungsfall eingesetzt werden soll.
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg bg-primary/10 px-3 py-2 text-sm leading-relaxed text-foreground">
+                        <div className="flex items-start gap-2">
+                          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                          <p>
+                            Bestimmte entscheidungsrelevante Anwendungen in Personal, Bildung, öffentlichen Leistungen und Migration sind in MUCGPT nicht zulässig. <a href={highRiskHelpPath} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">Mehr erfahren</a>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-foreground">Anweisungen prüfen</p>
+                            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                              Prüft die Assistentenanweisungen auf Hinweise auf unzulässige Hochrisiko-Anwendungsfälle.
+                            </p>
+                          </div>
+                          {!sanityCheckResult && (
+                            <button
+                              type="button"
+                              onClick={handlePromptSanityCheck}
+                              disabled={!systemPrompt.trim()}
+                              className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 sm:shrink-0"
+                            >
+                              Anweisungen prüfen
+                            </button>
+                          )}
+                        </div>
+
+                        {sanityCheckResult && SanityCheckIcon && (
+                          <div className={`mt-3 rounded-lg border px-3 py-2 ${sanityCheckResult.className}`} role="status" aria-live="polite">
+                            <div className="flex items-start gap-2">
+                              <SanityCheckIcon className={`mt-0.5 h-4 w-4 flex-shrink-0 ${sanityCheckResult.iconClassName}`} />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-foreground">{sanityCheckResult.title}</p>
+                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{sanityCheckResult.description}</p>
+                                {sanityCheckResult.area && (
+                                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">Möglicher Bereich: {sanityCheckResult.area}</p>
+                                )}
+                                <div className="mt-2 flex flex-wrap items-center gap-3">
+                                  <button type="button" onClick={handlePromptSanityCheck} className="text-sm font-semibold text-primary hover:underline">
+                                    Erneut prüfen
+                                  </button>
+                                  <a href={highRiskHelpPath} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:underline">
+                                    Mehr erfahren
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t border-border pt-4">
+                        {sanityCheckCase?.status === 'warning' && (
+                          <p className="mb-3 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm leading-relaxed text-foreground">
+                            Die Prüfung hat einen möglichen Hinweis erkannt. Prüfen Sie den Verwendungszweck besonders sorgfältig.
+                          </p>
+                        )}
+                        <div className="rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              id="assistant-compliance-confirmation"
+                              checked={complianceConfirmed}
+                              onCheckedChange={(checked) => setComplianceConfirmed(checked === true)}
+                              aria-required="true"
+                              className="mt-0.5 h-5 w-5 rounded-md border-muted-foreground/50"
+                            />
+                            <div>
+                              <label
+                                htmlFor="assistant-compliance-confirmation"
+                                className="cursor-pointer text-sm font-semibold leading-relaxed text-foreground"
+                              >
+                                Ich bestätige, dass dieser Assistent nicht für einen in MUCGPT unzulässigen Hochrisiko-Anwendungsfall eingesetzt werden soll.
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Response Behavior */}
@@ -932,10 +1191,16 @@ export function AssistantEditor({ assistant, onSave, onCancel }: AssistantEditor
                     opacity: openSections.actions ? 1 : 0,
                   }}
                 >
+                  <div className="rounded-lg border border-border bg-muted/35 px-3 py-2 text-sm text-muted-foreground">
+                    {missingRequiredCount > 0
+                      ? `Offene Pflichtfelder: ${missingRequiredCount}`
+                      : 'Bereit zum Speichern'}
+                  </div>
                   {/* Primary Action */}
                   <button
                     onClick={handleSave}
-                    className="btn-primary btn-lg w-full shadow-md hover:shadow-lg"
+                    disabled={!canSave}
+                    className="btn-primary btn-lg w-full shadow-md hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Save className="w-5 h-5" />
                     {assistant ? 'Update Assistant' : 'Create Assistant'}

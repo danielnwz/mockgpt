@@ -2,19 +2,24 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Send,
   Mic,
+  Square,
   Plus,
   X,
   FileUp,
   Paperclip,
   Check,
   ChevronDown,
+  Info,
+  MapPin,
   Maximize2,
   Minimize2,
+  ShieldCheck,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card';
 import { Slider } from './ui/slider';
+import { LLMModel } from '../data/llmModels';
 
 type ComposerToolId = string;
 
@@ -91,6 +96,13 @@ export interface ChatComposerProps {
   reasoningOptions?: Array<{ value: number; label: string }>;
   onReasoningChange?: (level: number) => void;
   reasoningLabel?: string;
+  transcriptionReady?: boolean;
+  transcriptionRecording?: boolean;
+  onVoiceInput?: () => void;
+  onOpenTranscriptionSettings?: () => void;
+  llmModels?: LLMModel[];
+  selectedLlmModelId?: string;
+  onLlmModelChange?: (modelId: string) => void;
 }
 
 export function ChatComposer({
@@ -102,11 +114,19 @@ export function ChatComposer({
   reasoningOptions,
   onReasoningChange,
   reasoningLabel,
+  transcriptionReady = false,
+  transcriptionRecording = false,
+  onVoiceInput,
+  onOpenTranscriptionSettings,
+  llmModels,
+  selectedLlmModelId,
+  onLlmModelChange,
 }: ChatComposerProps) {
   const [input, setInput] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isInputExpanded, setIsInputExpanded] = useState(false);
   const [isToolPickerOpen, setIsToolPickerOpen] = useState(false);
+  const [showModelDetails, setShowModelDetails] = useState(false);
   const [expandedToolGroups, setExpandedToolGroups] = useState<Record<string, boolean>>({});
   const [activeTools, setActiveTools] = useState<ComposerToolId[]>([]);
 
@@ -209,6 +229,23 @@ export function ChatComposer({
 
   const hasTypedInput = input.trim().length > 0;
   const showReasoning = reasoningOptions != null && onReasoningChange != null && reasoningLevel != null;
+  const voiceTitle = transcriptionReady
+    ? transcriptionRecording
+      ? 'Stop voice input'
+      : 'Start voice input'
+    : 'Set up voice input';
+  const selectedLlmModel = llmModels?.find((model) => model.id === selectedLlmModelId);
+  const controlClassName = 'inline-flex h-9 items-center rounded-lg border border-border/70 bg-background/90 text-foreground shadow-sm transition-colors hover:border-primary/25 hover:bg-background';
+  const iconControlClassName = 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background/90 text-muted-foreground shadow-sm transition-colors hover:border-primary/25 hover:bg-background hover:text-foreground';
+
+  const handleVoiceAction = () => {
+    if (onVoiceInput) {
+      onVoiceInput();
+      return;
+    }
+
+    onOpenTranscriptionSettings?.();
+  };
 
   return (
     <div>
@@ -227,7 +264,7 @@ export function ChatComposer({
                     key={item.id}
                     type="button"
                     onClick={() => toggleComposerTool(item.id)}
-                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-primary shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
+                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.09] px-3 text-xs font-semibold text-primary shadow-sm shadow-primary/5 transition-colors hover:border-primary/35 hover:bg-primary/[0.13]"
                   >
                     <span>{item.label}</span>
                     <span className="inline-flex h-4 w-0 items-center justify-center overflow-hidden rounded-full text-muted-foreground opacity-0 transition-all duration-200 group-hover:ml-0.5 group-hover:w-4 group-hover:opacity-100">
@@ -244,7 +281,7 @@ export function ChatComposer({
                     <button
                       type="button"
                       onClick={() => toggleComposerToolIds(activeGroupToolIds)}
-                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-full border border-border/80 bg-card/95 px-3 text-xs font-medium text-primary shadow-sm shadow-black/5 transition-colors hover:border-primary/25 hover:bg-card"
+                    className="group inline-flex h-8 shrink-0 items-center gap-2 rounded-lg border border-primary/20 bg-primary/[0.09] px-3 text-xs font-semibold text-primary shadow-sm shadow-primary/5 transition-colors hover:border-primary/35 hover:bg-primary/[0.13]"
                     >
                       <span>{item.label}</span>
                       <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary">
@@ -301,7 +338,7 @@ export function ChatComposer({
                 <HoverCardTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex h-8 shrink-0 items-center rounded-full border border-dashed border-border bg-background/70 px-3 text-xs font-medium text-primary transition-colors hover:border-primary/20 hover:bg-card"
+                    className="inline-flex h-8 shrink-0 items-center rounded-lg border border-border/70 bg-background/90 px-3 text-xs font-medium text-primary shadow-sm transition-colors hover:border-primary/25 hover:bg-background"
                   >
                     <span>+{hiddenActiveItems.length} more</span>
                   </button>
@@ -357,7 +394,7 @@ export function ChatComposer({
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-primary bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                  className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-primary bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                 >
                   <Plus className="h-3 w-3" />
                   <span>Tool</span>
@@ -476,7 +513,7 @@ export function ChatComposer({
       )}
 
       {/* Input card */}
-      <div className="relative rounded-[1.25rem] border border-border/80 bg-card/80 backdrop-blur-xl px-4 py-3 shadow-lg shadow-black/5 transition-all duration-300 focus-within:border-primary/50 focus-within:shadow-xl focus-within:shadow-primary/5">
+      <div className="rounded-[1.25rem] bg-card/88 px-4 py-3 shadow-lg shadow-black/6 ring-1 ring-border/75 backdrop-blur-xl transition-all duration-300 focus-within:ring-primary/45 focus-within:shadow-xl focus-within:shadow-primary/5">
         {selectedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap items-center gap-1.5">
             {selectedFiles.map((file) => (
@@ -503,7 +540,7 @@ export function ChatComposer({
             placeholder={privateMode ? 'Type a secure message...' : placeholder}
             rows={isInputExpanded ? 6 : 2}
             style={{ resize: 'none' }}
-            className={`thin-scrollbar w-full border-0 bg-transparent pb-10 pr-10 text-[15px] leading-relaxed text-foreground outline-none transition-all placeholder:text-muted-foreground ${isInputExpanded ? 'min-h-[400px]' : 'min-h-[48px] max-h-[220px]'}`}
+            className={`thin-scrollbar w-full border-0 bg-transparent pb-3 pr-10 text-[15px] leading-relaxed text-foreground outline-none transition-all placeholder:text-muted-foreground ${isInputExpanded ? 'min-h-[400px]' : 'min-h-[48px] max-h-[220px]'}`}
           />
           <button
             type="button"
@@ -515,25 +552,95 @@ export function ChatComposer({
           </button>
         </div>
 
-        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between pointer-events-none">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent/30 text-foreground transition-all duration-300 hover:bg-accent hover:text-primary shadow-sm hover:shadow"
-            title="Add files"
-          >
-            <Paperclip className="h-4 w-4" />
-          </button>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={iconControlClassName}
+              title="Add files"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
 
-          <div className="flex items-center gap-2 pointer-events-auto">
+            {llmModels && selectedLlmModel && onLlmModelChange && (
+              <Popover onOpenChange={(open) => !open && setShowModelDetails(false)}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={`${controlClassName} max-w-[15rem] gap-2 px-3 text-xs font-semibold`}
+                    title="Select AI model"
+                  >
+                    {privateMode && <ShieldCheck className="h-3.5 w-3.5 flex-shrink-0 text-primary" />}
+                    <span className="truncate">{selectedLlmModel.name}</span>
+                    <ChevronDown className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" side="top" className={`rounded-2xl border-border bg-popover p-0 shadow-xl ${showModelDetails ? 'w-[30rem]' : 'w-80'}`}>
+                  <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">AI model</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Choose the model for this chat.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowModelDetails((current) => !current)}
+                      className={`inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${showModelDetails ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'}`}
+                    >
+                      <Info className="h-3 w-3" />
+                      {showModelDetails ? 'Simple' : 'Details'}
+                    </button>
+                  </div>
+                  <div className="max-h-[22rem] overflow-y-auto p-1.5 thin-scrollbar">
+                    {llmModels.map((model) => {
+                      const selected = model.id === selectedLlmModelId;
+                      return (
+                        <button
+                          key={model.id}
+                          type="button"
+                          onClick={() => onLlmModelChange(model.id)}
+                          className={`w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-accent/60 ${selected ? 'bg-accent/45' : ''}`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">{model.name}</span>
+                            {selected && <Check className="h-4 w-4 flex-shrink-0 text-primary" />}
+                          </div>
+                          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{model.description}</p>
+                          {showModelDetails && (
+                            <div className="mt-2 rounded-lg border border-border/50 bg-background/70 p-2">
+                              <div className="grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
+                                <span>Input: {model.costInput === 0 ? 'Free' : `$${model.costInput}/1K`}</span>
+                                <span>Output: {model.costOutput === 0 ? 'Free' : `$${model.costOutput}/1K`}</span>
+                                <span>Knowledge: {model.knowledgeCutoff}</span>
+                                <span>Max: {model.maxInput.toLocaleString()} tok</span>
+                              </div>
+                              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                <MapPin className="h-3 w-3 text-primary/60" />
+                                <span>{model.provider}</span>
+                                <span>·</span>
+                                <span className="font-medium text-foreground">{model.location}</span>
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
             {showReasoning && (
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/30 shadow-sm"
+                    className={`${controlClassName} gap-2 px-3 text-xs font-semibold`}
                   >
-                    <span>Reasoning: {reasoningLabel}</span>
+                    <span>{reasoningLabel}</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80 rounded-2xl border-border bg-popover p-4">
@@ -561,16 +668,33 @@ export function ChatComposer({
 
             <button
               type="button"
-              onClick={handleSubmit}
-              className={`inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold shadow-sm transition-all duration-300 ${hasTypedInput
-                ? 'bg-primary text-primary-foreground hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5'
-                : 'bg-muted/70 text-muted-foreground hover:bg-muted'
+              onClick={handleVoiceAction}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-semibold shadow-sm transition-all duration-300 ${transcriptionRecording
+                  ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                  : transcriptionReady
+                    ? 'border-primary bg-primary text-primary-foreground hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5'
+                    : 'border-border/70 bg-background/90 text-muted-foreground hover:border-primary/25 hover:bg-background hover:text-foreground'
               }`}
-              title={hasTypedInput ? 'Send' : 'Voice input'}
+              title={voiceTitle}
             >
-              {hasTypedInput ? <Send className="h-4 w-4 ml-1" /> : <Mic className="h-4 w-4 ml-1" />}
-              <span>{hasTypedInput ? 'Send' : 'Speak'}</span>
+              {transcriptionRecording ? (
+                <Square className="h-4 w-4 fill-current" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
             </button>
+
+            {hasTypedInput && (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/30"
+                title="Send"
+              >
+                <Send className="h-4 w-4 ml-1" />
+                <span>Send</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

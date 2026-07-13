@@ -1,11 +1,11 @@
 import { Star, Plus, Search, FileUp, X, Check, ChevronDown, Trash2, Lock, Users, Globe2 } from 'lucide-react';
-import { Assistant } from '../types';
+import { Assistant, AssistantReport, AssistantReportReason, UserRole } from '../types';
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../contexts/LanguageContext';
 import { ImportAssistantModal } from './ImportAssistantModal';
 import { AssistantDetailsSidebar } from './AssistantDetailsSidebar';
 
-type SortBy = 'subscriptions' | 'title' | 'updated';
+type SortBy = 'subscriptions' | 'title' | 'updated' | 'lastUsed';
 type PersonalFilter = 'all' | 'owned' | 'subscribed';
 
 interface AssistantDiscoveryProps {
@@ -18,7 +18,10 @@ interface AssistantDiscoveryProps {
   onCreateNew: () => void;
   onToggleSubscribe: (assistantId: string) => void;
   subscribedIds: string[];
-  showAssistantIcons: boolean;
+  currentUserRole: UserRole;
+  adminMode: boolean;
+  reports: AssistantReport[];
+  onReportAssistant: (assistantId: string, reason: AssistantReportReason, comment?: string) => void;
 }
 
 const formatToolName = (tool: string): string => {
@@ -38,7 +41,10 @@ export function AssistantDiscovery({
   onCreateNew,
   onToggleSubscribe,
   subscribedIds,
-  showAssistantIcons,
+  currentUserRole,
+  adminMode,
+  reports,
+  onReportAssistant,
 }: AssistantDiscoveryProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,9 +77,17 @@ export function AssistantDiscovery({
     onDuplicateAssistant(importedData);
   };
 
+
   const uniqueAssistants = assistants.filter((assistant, index, list) =>
     list.findIndex((item) => item.id === assistant.id) === index
   );
+
+  const reportsByAssistant = reports.reduce<Record<string, AssistantReport[]>>((acc, report) => {
+    acc[report.assistantId] = [...(acc[report.assistantId] || []), report];
+    return acc;
+  }, {});
+
+
 
   const matchesSearch = (assistant: Assistant) => {
     if (!searchQuery) return true;
@@ -105,23 +119,31 @@ export function AssistantDiscovery({
   const isSubscribedAssistant = (assistant: Assistant) =>
     subscribedIds.includes(assistant.id) || isImportedAssistant(assistant);
 
+  const canViewAssistant = (assistant: Assistant) => {
+    if (assistant.deletedByOwner || assistant.moderationHidden) return false;
+    return assistant.isPublic || isOwnedAssistant(assistant) || isSubscribedAssistant(assistant);
+  };
+
+
+  const discoverableAssistants = uniqueAssistants.filter((assistant) =>
+    canViewAssistant(assistant) && matchesSearch(assistant)
+  );
+
   const ownedAssistants = sortAssistants(
-    uniqueAssistants.filter((assistant) => isOwnedAssistant(assistant) && matchesSearch(assistant)),
+    discoverableAssistants.filter((assistant) => isOwnedAssistant(assistant)),
     personalSortBy
   );
   const subscribedAssistants = sortAssistants(
-    uniqueAssistants.filter((assistant) =>
+    discoverableAssistants.filter((assistant) =>
       !isOwnedAssistant(assistant) &&
-      isSubscribedAssistant(assistant) &&
-      matchesSearch(assistant)
+      isSubscribedAssistant(assistant)
     ),
     personalSortBy
   );
   const communityAssistants = sortAssistants(
-    uniqueAssistants.filter((assistant) =>
+    discoverableAssistants.filter((assistant) =>
       !isOwnedAssistant(assistant) &&
-      !assistant.deletedByOwner &&
-      matchesSearch(assistant)
+      !isSubscribedAssistant(assistant)
     ),
     communitySortBy
   );
@@ -141,6 +163,7 @@ export function AssistantDiscovery({
 
   const getSortLabel = (option: SortBy) => {
     if (option === 'subscriptions') return 'Subscriptions';
+    if (option === 'lastUsed') return 'Last used';
     if (option === 'title') return 'Title';
     return 'Last updated';
   };
@@ -148,7 +171,8 @@ export function AssistantDiscovery({
   const renderSortControl = (
     menu: 'personal' | 'community',
     value: SortBy,
-    onChange: (nextSort: SortBy) => void
+    onChange: (nextSort: SortBy) => void,
+    options: SortBy[] = ['updated', 'subscriptions', 'title']
   ) => (
     <div className="relative z-20 flex shrink-0 items-center gap-2">
       <button
@@ -164,7 +188,7 @@ export function AssistantDiscovery({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpenSortMenu(null)} />
           <div className="surface-popover absolute right-0 top-full z-30 mt-2 w-48 py-1">
-            {(['updated', 'subscriptions', 'title'] as const).map((option) => (
+            {options.map((option) => (
               <button
                 key={option}
                 type="button"
@@ -219,75 +243,43 @@ export function AssistantDiscovery({
       <div
         key={assistant.id}
         onClick={() => setSelectedAssistant(assistant)}
-        className={`group relative flex ${showAssistantIcons ? 'min-h-[124px]' : 'min-h-[92px]'} cursor-pointer flex-col overflow-hidden rounded-xl border bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md ${selectedAssistant?.id === assistant.id
+        className={`group relative flex min-h-[124px] cursor-pointer flex-col overflow-hidden rounded-xl border bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md ${selectedAssistant?.id === assistant.id
           ? 'border-primary ring-2 ring-primary/20'
           : 'border-border/70'
           } ${assistant.deletedByOwner ? 'opacity-70 grayscale-[0.2]' : ''}`}
       >
         <div className="flex h-full flex-col px-3.5 pb-2.5 pt-3">
-          {showAssistantIcons ? (
-            <>
-              <div className="mb-2 flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/15 text-[1.1rem] ring-1 ring-slate-200/80 dark:ring-slate-600/35 ${assistant.deletedByOwner ? 'grayscale' : ''}`}>
-                    {assistant.icon}
-                  </div>
-                  <h3 className="line-clamp-2 min-w-0 text-sm font-semibold leading-5 text-foreground group-hover:text-primary" title={assistant.name}>
-                    {assistant.name}
-                  </h3>
-                </div>
-                {!isOwn && (
-                  <button
-                    type="button"
-                    aria-label={isSubbed ? t('unsubscribe') : t('subscribe')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSubscribe(assistant.id);
-                    }}
-                    className={`shrink-0 rounded-md p-1 opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100 ${isSubbed
-                      ? 'text-yellow-500'
-                      : 'text-muted-foreground/40 hover:text-yellow-500'
-                      }`}
-                  >
-                    <Star className={`h-4 w-4 ${isSubbed ? 'fill-current' : ''}`} />
-                  </button>
-                )}
+          <div className="mb-2 flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/15 text-[1.1rem] ring-1 ring-slate-200/80 dark:ring-slate-600/35 ${assistant.deletedByOwner ? 'grayscale' : ''}`}>
+                {assistant.icon}
               </div>
-
-              <p className="mb-2 line-clamp-2 text-xs leading-4 text-muted-foreground">
-                {assistant.description}
-              </p>
-            </>
-          ) : (
-            <div className="mb-1 flex items-start justify-between gap-3">
-              <h3 className="line-clamp-2 pt-1 text-sm font-semibold leading-5 text-foreground group-hover:text-primary" title={assistant.name}>
+              <h3 className="line-clamp-2 min-w-0 text-sm font-semibold leading-5 text-foreground group-hover:text-primary" title={assistant.name}>
                 {assistant.name}
               </h3>
-              <div className="flex shrink-0 items-center gap-1.5">
-                {!isOwn && (
-                  <button
-                    type="button"
-                    aria-label={isSubbed ? t('unsubscribe') : t('subscribe')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSubscribe(assistant.id);
-                    }}
-                    className={`rounded-md p-1.5 opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100 ${isSubbed
-                      ? 'text-yellow-500'
-                      : 'text-muted-foreground/40 hover:text-yellow-500'
-                      }`}
-                  >
-                    <Star className={`h-4 w-4 ${isSubbed ? 'fill-current' : ''}`} />
-                  </button>
-                )}
-              </div>
             </div>
-          )}
-          {!showAssistantIcons && (
-            <p className="mb-2 line-clamp-2 text-xs leading-4 text-muted-foreground">
-              {assistant.description}
-            </p>
-          )}
+            {!isOwn && (
+              <button
+                type="button"
+                aria-label={isSubbed ? t('unsubscribe') : t('subscribe')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSubscribe(assistant.id);
+                }}
+                className={`shrink-0 rounded-md p-1 opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100 ${isSubbed
+                  ? 'text-yellow-500'
+                  : 'text-muted-foreground/40 hover:text-yellow-500'
+                  }`}
+              >
+                <Star className={`h-4 w-4 ${isSubbed ? 'fill-current' : ''}`} />
+              </button>
+            )}
+          </div>
+
+          <p className="mb-2 line-clamp-2 text-xs leading-4 text-muted-foreground">
+            {assistant.description}
+          </p>
+
 
           <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/20 pt-2.5 text-[11px] leading-4 text-muted-foreground/35">
             <span className="min-w-0 truncate">{meta.author}</span>
@@ -365,7 +357,6 @@ export function AssistantDiscovery({
               </div>
             </div>
           </div>
-
           <div className="space-y-6 pb-20">
             <section ref={personalSectionRef} className="scroll-mt-28">
               <div className="mb-3 flex flex-col gap-3">
@@ -398,7 +389,7 @@ export function AssistantDiscovery({
                     ))}
                   </div>
                   <div className="flex items-center gap-4">
-                    {renderSortControl('personal', personalSortBy, setPersonalSortBy)}
+                    {renderSortControl('personal', personalSortBy, setPersonalSortBy, ['lastUsed', 'updated', 'subscriptions', 'title'])}
                   </div>
                 </div>
               </div>
@@ -497,6 +488,10 @@ export function AssistantDiscovery({
             onDuplicateAssistant={onDuplicateAssistant}
             onDeleteAssistant={onDeleteAssistant}
             onToggleSubscribe={onToggleSubscribe}
+            currentUserRole={currentUserRole}
+            adminMode={adminMode}
+            reportsForAssistant={reportsByAssistant[selectedAssistant.id] || []}
+            onReportAssistant={onReportAssistant}
           />
         )}
       </div>
@@ -510,3 +505,15 @@ export function AssistantDiscovery({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+

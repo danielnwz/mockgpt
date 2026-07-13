@@ -9,8 +9,10 @@ interface HomePageProps {
   recommendedAssistants: Assistant[];
   onDiscoverAll?: () => void;
   onOpenAssistants?: () => void;
-  onOpenTerms?: () => void;
-  onOpenVersion?: () => void;
+  transcriptionReady?: boolean;
+  transcriptionRecording?: boolean;
+  onVoiceInput?: () => void;
+  onOpenTranscriptionSettings?: () => void;
 }
 
 export function HomePage({
@@ -18,8 +20,10 @@ export function HomePage({
   recommendedAssistants,
   onDiscoverAll,
   onOpenAssistants,
-  onOpenTerms,
-  onOpenVersion,
+  transcriptionReady,
+  transcriptionRecording,
+  onVoiceInput,
+  onOpenTranscriptionSettings,
 }: HomePageProps) {
   const { t, getWelcomeMessages } = useTranslation();
   const [welcomeMsg, setWelcomeMsg] = useState({ greeting: '', message: '' });
@@ -81,6 +85,10 @@ export function HomePage({
             <ChatComposer
               onSubmit={(msg) => onStartChat(msg)}
               placeholder={t('startConversation')}
+              transcriptionReady={transcriptionReady}
+              transcriptionRecording={transcriptionRecording}
+              onVoiceInput={onVoiceInput}
+              onOpenTranscriptionSettings={onOpenTranscriptionSettings}
             />
           </div>
 
@@ -122,36 +130,6 @@ export function HomePage({
             </div>
           </div>
 
-        </div>
-
-        <div className="w-full max-w-6xl mt-24 lg:mt-32">
-          <div className="border-t border-border/60 pt-3">
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">
-                Core v1.0.0
-              </span>
-              <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">
-                Frontend v1.0.0
-              </span>
-              <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">
-                Assistant v1.0.0
-              </span>
-              <button
-                onClick={() => onOpenVersion?.()}
-                className="ml-2 btn-secondary btn-sm"
-              >
-                What is new?
-              </button>
-              <div className="ml-auto">
-                <button
-                  onClick={() => onOpenTerms?.()}
-                  className="btn-ghost btn-sm"
-                >
-                  Terms of use
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
