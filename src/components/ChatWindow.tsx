@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Check,
   Ellipsis,
+  Pencil,
 } from 'lucide-react';
 import { Chat, Assistant, ResponseBehavior, AssistantReport, AssistantReportReason, UserRole } from '../types';
 import { useTranslation } from '../contexts/LanguageContext';
@@ -116,6 +117,8 @@ export function ChatWindow({
   );
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [plainTextMessageIds, setPlainTextMessageIds] = useState<Record<string, boolean>>({});
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const rewriteQuickPrompts = [
     { value: 'shorter', label: t('rewriteShorter') },
@@ -151,6 +154,8 @@ export function ChatWindow({
     setReasoningLevel(responseBehaviorToSpectrum(nextBehavior));
     setChatSystemPrompt(chat.systemPrompt || assistant?.systemPrompt || 'You are a helpful AI assistant.');
     setPlainTextMessageIds({});
+    setEditingMessageId(null);
+    setEditingValue('');
   }, [assistant?.id, chat.id]);
 
   const reasoningLabel = useMemo(
@@ -345,6 +350,25 @@ export function ChatWindow({
     }
   };
 
+  const handleStartEdit = (messageId: string, content: string) => {
+    setEditingMessageId(messageId);
+    setEditingValue(content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingValue('');
+  };
+
+  const handleSubmitEdit = () => {
+    const trimmed = editingValue.trim();
+    setEditingMessageId(null);
+    setEditingValue('');
+    if (trimmed) {
+      onSendMessage(trimmed);
+    }
+  };
+
   const getPreviousUserPrompt = (messageIndex: number) => {
     for (let i = messageIndex - 1; i >= 0; i -= 1) {
       if (chat.messages[i].role === 'user') {
@@ -477,8 +501,8 @@ export function ChatWindow({
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-          <div className="mx-auto flex min-h-full w-full max-w-4xl flex-col gap-6">
+        <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-6">
+          <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-5">
           {chat.messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
               <div className="text-center space-y-4 max-w-2xl">
@@ -538,85 +562,144 @@ export function ChatWindow({
             const isLatestAssistant = isAssistant && index === chat.messages.length - 1;
             const isPlainTextMode = Boolean(plainTextMessageIds[message.id]);
 
-            return (
-              <div
-                key={message.id}
-                className={`group flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-              >
-                {message.role === 'assistant' && assistant && (
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-lg">
-                    {assistant.icon}
-                  </div>
-                )}
-                {message.role === 'assistant' && !assistant && (
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-white text-xl shadow-md">
-                    🤖
-                  </div>
-                )}
-                <div className={`max-w-2xl ${isAssistant ? 'min-w-0' : ''}`}>
-                  <div
-                    className={`group/bubble rounded-2xl px-5 py-3 ${isAssistant ? 'pr-20' : 'pr-12'} relative ${message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary/90 border border-border/45 text-black shadow-sm backdrop-blur-sm'
-                      }`}
-                  >
-                    <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 pointer-events-none transition-all group-hover/bubble:opacity-100 group-hover/bubble:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
-                      <button
-                        onClick={() => handleCopyMessage(message.id, message.content)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/45 bg-background/85 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"
-                        title={t('copyMessage')}
-                      >
-                        {copiedMessageId === message.id ? <Check className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                      {isAssistant && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/45 bg-background/85 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-background hover:text-foreground"
-                              title="More actions"
-                            >
-                              <Ellipsis className="w-3.5 h-3.5" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" sideOffset={6} className="w-44">
-                            {isLatestAssistant && (
-                              <DropdownMenuItem onSelect={() => handleRegenerate(index)} disabled={!canRegenerate}>
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                {t('regenerate')}
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onSelect={() => toggleMessageTextMode(message.id)}>
-                              <Check className={`w-3.5 h-3.5 ${isPlainTextMode ? 'opacity-100' : 'opacity-0'}`} />
-                              {isPlainTextMode ? 'Formatted View' : 'Plain Text View'}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                  </div>
+            if (!isAssistant) {
+              const isEditing = editingMessageId === message.id;
 
-                  {isAssistant && (
-                    <div className="mt-2 flex flex-wrap items-center gap-2 pl-1">
-                      {isLatestAssistant && rewriteQuickPrompts.map((prompt) => (
+              // User message — quiet, right-aligned bubble, no avatar.
+              return (
+                <div key={message.id} className="group -mt-2 flex justify-end">
+                  {isEditing ? (
+                    // Inline edit — message becomes an editable field with actions.
+                    <div className="w-full max-w-[80%]">
+                      <div className="rounded-3xl rounded-br-lg bg-muted px-4 py-3">
+                        <textarea
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmitEdit();
+                            } else if (e.key === 'Escape') {
+                              e.preventDefault();
+                              handleCancelEdit();
+                            }
+                          }}
+                          autoFocus
+                          rows={Math.min(8, Math.max(2, editingValue.split('\n').length))}
+                          className="thin-scrollbar w-full resize-none bg-transparent text-[15px] leading-relaxed text-foreground outline-none"
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center justify-end gap-2">
                         <button
-                          key={`${message.id}-${prompt.value}`}
                           type="button"
-                          onClick={() => handleQuickFollowUp(prompt.label)}
-                          className="inline-flex h-7 items-center rounded-full border border-primary/20 bg-primary/5 px-2.5 text-[11px] font-medium text-primary transition-colors hover:bg-primary/10"
-                          title={t('quickRewrite')}
+                          onClick={handleCancelEdit}
+                          className="inline-flex h-8 items-center rounded-full px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                         >
-                          {prompt.label}
+                          {t('cancel')}
                         </button>
-                      ))}
+                        <button
+                          type="button"
+                          onClick={handleSubmitEdit}
+                          disabled={!editingValue.trim()}
+                          className="inline-flex h-8 items-center rounded-full bg-primary px-4 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-40"
+                        >
+                          {t('send')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex max-w-[80%] flex-col items-end gap-1">
+                      <div className="rounded-3xl rounded-br-lg bg-muted px-4 py-2.5 text-foreground">
+                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                      </div>
+                      <div className="flex items-center gap-0.5 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover:opacity-100">
+                        <button
+                          onClick={() => handleStartEdit(message.id, message.content)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          title={t('editAndResend')}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleCopyMessage(message.id, message.content)}
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                          title={t('copyMessage')}
+                        >
+                          {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-                {message.role === 'user' && (
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/90 to-primary flex items-center justify-center text-primary-foreground text-xl shadow-md">
-                    👤
+              );
+            }
+
+            // Assistant message — plain text, full width, no bubble.
+            return (
+              <div key={message.id} className="group flex flex-col gap-1.5">
+                <div className="text-[15px] leading-7 text-foreground">
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                </div>
+
+                {/* Action bar — space is always reserved (no layout movement).
+                    Latest reply stays visible; older replies only fade in on hover. */}
+                <div
+                  className={`flex h-8 items-center gap-0.5 transition-opacity duration-150 ${
+                    isLatestAssistant
+                      ? 'opacity-100'
+                      : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100'
+                  }`}
+                >
+                  <button
+                    onClick={() => handleCopyMessage(message.id, message.content)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    title={t('copyMessage')}
+                  >
+                    {copiedMessageId === message.id ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                  {isLatestAssistant && (
+                    <button
+                      onClick={() => handleRegenerate(index)}
+                      disabled={!canRegenerate}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                      title={t('regenerate')}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        title="More actions"
+                      >
+                        <Ellipsis className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" sideOffset={6} className="w-44">
+                      <DropdownMenuItem onSelect={() => toggleMessageTextMode(message.id)}>
+                        <Check className={`w-3.5 h-3.5 ${isPlainTextMode ? 'opacity-100' : 'opacity-0'}`} />
+                        {isPlainTextMode ? 'Formatted View' : 'Plain Text View'}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Quick rewrite chips on the latest reply */}
+                {isLatestAssistant && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {rewriteQuickPrompts.map((prompt) => (
+                      <button
+                        key={`${message.id}-${prompt.value}`}
+                        type="button"
+                        onClick={() => handleQuickFollowUp(prompt.label)}
+                        className="inline-flex h-7 items-center rounded-full border border-border bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+                        title={t('quickRewrite')}
+                      >
+                        {prompt.label}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -627,8 +710,8 @@ export function ChatWindow({
         </div>
 
         {/* Input */}
-        <div className="p-6">
-          <div className="mx-auto flex max-w-5xl items-end gap-2">
+        <div className="px-4 pb-6 pt-2 sm:px-6">
+          <div className="mx-auto flex max-w-3xl items-end gap-2">
             <div className="min-w-0 flex-1">
               <ChatComposer
                 onSubmit={onSendMessage}
